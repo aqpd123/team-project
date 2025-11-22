@@ -1,0 +1,259 @@
+@startuml
+
+skinparam dpi 300
+
+title 사주 앱 핵심 기능 시퀀스
+
+actor "사용자" as User
+actor "관리자" as Admin
+
+' =========================
+' 0. 화면/서비스 정의
+' =========================
+box "📱 클라이언트(UI)" #E9F5FF
+  participant "홈 화면\n(Home)" as Home
+  participant "사주 메뉴\n(SajuMenu)" as SajuMenu
+  participant "게시판 화면\n(BoardUI)" as BoardUI
+  participant "더보기 화면\n(MoreUI)" as MoreUI
+  participant "로그인 창\n(LoginUI)" as LoginUI
+  participant "결과 보기\n(ResultUI)" as ResultUI
+end box
+
+box "🧠 백엔드 서비스" #FFF8E1
+  participant "인증 서비스\n(Auth)" as Auth
+  participant "사용자 서비스\n(UserService)" as UserService
+  participant "게시판 서비스\n(BoardService)" as BoardService
+  participant "궁합 서비스\n(CompatibilityService)" as CompatibilityService
+  participant "유명인 궁합 서비스\n(CelebrityCompatibilityService)" as CelebrityCompatibilityService
+  participant "사주 계산기\n(SajuCalculator)" as SajuCalculator
+end box
+
+database "데이터베이스\n(DB)" as DB
+
+box "🛠 관리자 영역" #FDE0E0
+  participant "관리자 콘솔\n(AdminUI)" as AdminUI
+end box
+
+' =========================================================
+' 1. 홈 화면 진입 & 로그인 분기
+' =========================================================
+== 🏠 홈 화면(Home) ==
+User -> Home: 앱 실행
+Home -> Auth: 로그인 여부 확인
+Auth --> Home: 로그인됨 / 비회원
+
+alt 비회원
+    Home -> LoginUI: 로그인/회원가입 모달 표시
+    LoginUI --> User: 로그인 또는 회원가입 유도
+    User -> LoginUI: 모달 닫기 선택
+    LoginUI --> Home: 홈 화면으로 복귀
+    Home -> MoreUI: 제한된 메뉴(미리보기 형태) 표시
+    note right of Home
+      비회원은 홈, 게시판, 사주보러가기, 더보기 메뉴를 볼 수 있으나
+      실제 기능 이용 시 "로그인이 필요합니다" 안내창이 표시되고
+      로그인 창으로 이동할 수 있는 버튼이 제공됨.
+    end note
+else 로그인됨
+    Home --> User: 홈 화면 표시(사주보러가기 / 게시판 / 더보기 등)
+end
+
+opt 로그인 처리(참고 흐름)
+  User -> LoginUI: 자격 증명 입력
+  LoginUI -> Auth: 로그인 요청(id,pw)
+  alt 성공
+    Auth --> LoginUI: 200 OK 토큰(JWT)
+    LoginUI -> Home: 토큰 저장/적용
+  else 실패
+    Auth --> LoginUI: 401 Unauthorized
+    LoginUI --> User: 오류 안내(아이디/비밀번호 확인)
+  end
+end
+
+
+' =========================================================
+' 2. 홈 → 사주 보러가기
+' =========================================================
+== 🔮 사주 보러가기 ==
+User -> Home: "사주 보러가기" 탭 선택
+Home -> Auth: 다시 로그인 확인
+Auth --> Home: OK
+
+Home -> SajuMenu: 사주 메뉴로 이동
+SajuMenu --> User: [사주보기 / 사주궁합보기 / 유명인과 사주보기] 표시
+
+alt 사주보기 선택
+    User -> SajuMenu: 사주보기 선택
+    SajuMenu -> SajuCalculator: analyze_personality(saju, gender)
+    SajuCalculator --> SajuMenu: {five, traits, flags, report}
+    SajuMenu -> ResultUI: 결과 표시
+    ResultUI --> User: 사주 결과 확인
+    opt 검증 실패
+    SajuCalculator --> SajuMenu: 400 잘못된 입력(날짜 범위 등)
+      SajuMenu --> User: 입력 재확인 안내
+    end
+else 사주궁합보기 선택
+    User -> SajuMenu: 사주궁합보기 선택
+    SajuMenu -> SajuCalculator: calculate_compatibility(saju1, saju2, gender1, gender2)
+    SajuCalculator --> SajuMenu: {original, final, stress}
+    SajuMenu --> User: 결과 준비
+    SajuMenu -> ResultUI: 궁합 결과 표시
+    ResultUI --> User: 궁합 결과 확인
+else 유명인과 사주보기 선택
+    User -> SajuMenu: 유명인과 사주보기 선택
+    SajuMenu -> SajuCalculator: analyze_personality(내 사주)
+    SajuCalculator --> SajuMenu: {five, traits}
+    SajuMenu -> CelebrityCompatibilityService: 유명인 목록/상세 요청
+    CelebrityCompatibilityService -> DB: SELECT celebrities / saju
+    DB --> CelebrityCompatibilityService: 목록/상세
+    CelebrityCompatibilityService -> SajuCalculator: calculate_compatibility(내 사주, celeb)
+    SajuCalculator --> CelebrityCompatibilityService: 궁합 점수
+    CelebrityCompatibilityService --> SajuMenu: 유명인별 궁합 리스트
+    SajuMenu -> ResultUI: 유명인 궁합 표시
+    ResultUI --> User: 유명인과의 궁합 확인
+end
+
+' =========================================================
+' 3. 홈 → 게시판
+' =========================================================
+== 📝 게시판 ==
+User -> Home: "게시판" 탭 선택
+Home -> Auth: 로그인 여부 확인
+Auth --> Home: OK
+
+Home -> BoardUI: 게시판 화면 열기
+BoardUI -> BoardService: 게시글 목록 요청(page,limit,board)
+BoardService -> DB: SELECT posts LIMIT/OFFSET
+DB --> BoardService: 게시글 목록
+BoardService --> BoardUI: 게시글 목록
+BoardUI --> User: 게시글 목록 표시
+
+... 글쓰기/댓글(extend) ...
+User -> BoardUI: 글쓰기/댓글/쪽지/친구추가
+BoardUI -> BoardService: 게시글/댓글 저장 또는 메시지 전송
+BoardService -> DB: INSERT/UPDATE
+DB --> BoardService: ok
+BoardService --> BoardUI: 처리 결과
+BoardUI --> User: 완료 안내
+
+alt DB 오류
+  DB --> BoardService: 5xx 에러
+  BoardService --> BoardUI: 실패 응답/재시도 안내
+  BoardUI --> User: 저장 실패 알림
+end
+
+' =========================================================
+' 4. 홈/더보기 → 설정·프로필·내 사주 확인
+' =========================================================
+== ⚙️ 더보기 ==
+User -> Home: "더보기" 탭 선택
+Home -> MoreUI: 더보기 화면 열기
+MoreUI -> Auth: 로그인 여부 확인
+Auth --> MoreUI: 로그인됨
+
+MoreUI --> User: 알림설정/프로필설정/약관/피드백 표시
+
+User -> MoreUI: 프로필 설정 선택
+MoreUI -> UserService: 내 사주 정보 요청
+UserService -> DB: SELECT user_saju
+DB --> UserService: 내 사주 데이터
+UserService --> MoreUI: 내 사주 데이터
+MoreUI --> User: "내 사주 확인" 표시
+
+' (선택) 닉네임 변경
+User -> MoreUI: 닉네임 변경
+MoreUI --> User: 변경 완료
+
+' =========================================================
+' 5. 관리자 플로우
+' =========================================================
+== 🛠 관리자 콘솔 ==
+Admin -> AdminUI: 관리자 로그인
+AdminUI -> Auth: 관리자 인증
+Auth --> AdminUI: 인증 성공
+
+Admin -> AdminUI: 게시판 관리 선택
+AdminUI -> BoardService: 신고/게시글 목록 요청
+BoardService -> DB: SELECT reports/posts
+DB --> BoardService: 목록
+BoardService --> AdminUI: 목록 전달
+AdminUI --> Admin: 게시글/댓글 관리
+
+Admin -> AdminUI: 사주/오행 결과 관리 선택
+AdminUI -> CompatibilityService: 궁합/분석 결과 목록 요청
+CompatibilityService -> DB: SELECT compatibility_requests/results
+DB --> CompatibilityService: 결과 목록
+CompatibilityService --> AdminUI: 결과 목록
+AdminUI --> Admin: 결과 검수/수정
+
+'
+' =========================================================
+' 6. 커뮤니티: 글쓴이 ↔ 독자 궁합 요청/수락
+' =========================================================
+== 🤝 커뮤니티 궁합 요청/수락 ==
+actor "작성자" as Author
+
+... 게시글 상세 진입 ...
+User -> BoardUI: 게시글 상세 열기(작성자=Author)
+BoardUI -> BoardService: 조회수 증가/상세 로드
+BoardService -> DB: UPDATE views; SELECT post, author
+DB --> BoardService: ok, 작성자 정보
+BoardService --> BoardUI: 상세 + 작성자 정보
+
+alt 독자가 작성자에게 궁합 요청
+  User -> BoardUI: "작성자와 궁합 요청" 클릭
+  BoardUI -> Auth: 로그인 확인
+  alt 미로그인
+    Auth --> BoardUI: 401
+    BoardUI --> User: 로그인 유도
+  else 로그인됨
+    Auth --> BoardUI: OK
+    BoardUI -> CompatibilityService: create_request(requester_id, target_id=author_id, post_id)
+    alt 중복 요청 존재
+      CompatibilityService -> DB: SELECT pending request
+      DB --> CompatibilityService: exists
+      CompatibilityService --> BoardUI: 409 Conflict(중복 요청)
+      BoardUI --> User: 이미 요청됨 안내
+    else 신규 요청
+      CompatibilityService -> DB: INSERT compatibility_request(status='pending')
+      DB --> CompatibilityService: ok
+      CompatibilityService --> BoardUI: 요청 생성 성공
+      BoardUI --> User: 요청 완료(작성자에게 알림)
+    end
+  end
+end
+
+... 시간이 지나 작성자가 알림 확인 ...
+Author -> BoardUI: "궁합 요청 알림" 열기
+BoardUI -> CompatibilityService: 요청 목록 조회(target_id=author_id)
+CompatibilityService -> DB: SELECT pending by target
+DB --> CompatibilityService: pending requests
+CompatibilityService --> BoardUI: 요청 목록
+BoardUI --> Author: 요청 표시
+
+alt 작성자가 수락
+  Author -> BoardUI: 수락 클릭
+  BoardUI -> CompatibilityService: accept_request(request_id, target_id=author_id)
+  CompatibilityService -> DB: SELECT requester_saju AS saju1, target_saju AS saju2
+  DB --> CompatibilityService: saju1, saju2, gender1, gender2
+  CompatibilityService -> SajuCalculator: calculate_compatibility(saju1, saju2, gender1, gender2)
+  SajuCalculator --> CompatibilityService: {original, final, stress}
+  CompatibilityService -> DB: UPDATE request SET status='accepted', result={...}
+  DB --> CompatibilityService: ok
+  CompatibilityService --> BoardUI: {compatibility_result, status}
+  BoardUI --> Author: 결과 표시
+  opt 결과 공유(요청자 알림)
+    BoardUI -> CompatibilityService: notify_requester(request_id)
+    CompatibilityService -> DB: INSERT notification
+    DB --> CompatibilityService: ok
+    CompatibilityService --> BoardUI: ok
+  end
+else 거절
+  Author -> BoardUI: 거절 클릭
+  BoardUI -> CompatibilityService: decline_request(request_id)
+  CompatibilityService -> DB: UPDATE request SET status='declined'
+  DB --> CompatibilityService: ok
+  CompatibilityService --> BoardUI: 상태 변경 결과
+  BoardUI --> Author: 거절 처리 완료
+end
+
+@enduml

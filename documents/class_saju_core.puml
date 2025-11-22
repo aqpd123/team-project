@@ -1,0 +1,47 @@
+@startuml saju_core_상세
+
+top to bottom direction
+skinparam linetype ortho
+
+class SajuCalculator {
+  +get_birth_data(year:int, month:int, day:int): Dict[str,str]
+  +calculate_personal_traits(saju: Dict[str,str]): Dict[str,float]
+  +calculate_compatibility(saju1:Dict[str,str], saju2:Dict[str,str], gender1:int, gender2:int): Dict[str,float]
+  +determine_character_type(saju: Dict[str,str]): str
+  +calculate_personality_flags_hd2(saju: Dict[str,str], gender:int=0): Dict[str,Any]
+  +analyze_personality(saju: Dict[str,str], gender:int=0): Dict[str,Any]
+}
+
+class DataValidator {
+  +validate_birth_date(year:int, month:int, day:int): void
+  +validate_saju_data(saju: Dict[str,str]): void
+}
+
+class PersonalityAnalyzer {
+  +analyze_five_elements(saju: Dict[str,str]): Dict[str,float]
+  +calculate_8_traits(saju: Dict[str,str]): Dict[str,float]
+}
+
+class CharacterSystem {
+  +get_character_info(type:str): Dict[str,str]
+  +get_personality_description(traits: Dict[str,float]): str
+}
+
+class SajuData {
+  +year_gan: str
+  +year_ji: str
+  +month_gan: str
+  +month_ji: str
+  +day_gan: str
+  +day_ji: str
+  +pillars(): List[Tuple[str,str]]
+}
+
+SajuCalculator *-- DataValidator
+SajuCalculator *-- PersonalityAnalyzer
+SajuCalculator *-- CharacterSystem
+PersonalityAnalyzer ..> SajuData
+
+@enduml
+
+

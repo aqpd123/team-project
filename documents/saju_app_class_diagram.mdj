@@ -1,0 +1,559 @@
+{
+  "_type": "project",
+  "owner": "staruml",
+  "project": {
+    "projectName": "사주분석_앱",
+    "authors": [],
+    "created": "",
+    "modified": "",
+    "description": ""
+  },
+  "models": [
+    {
+      "_type": "UMLModel",
+      "_id": "AAAAAAFF+h3vjMw=",
+      "name": "사주분석_앱",
+      "ownedElements": [
+        {
+          "_type": "UMLPackage",
+          "_id": "AAAAAAFF+h3vjMx=",
+          "name": "saju_core",
+          "ownedElements": [
+            {
+              "_type": "UMLClass",
+              "_id": "AAAAAAFF+h3vjMy=",
+              "name": "SajuData",
+              "attributes": [
+                {
+                  "_type": "UMLAttribute",
+                  "_id": "AAAAAAFF+h3vjMz=",
+                  "name": "year_gan",
+                  "type": "str",
+                  "visibility": "public"
+                },
+                {
+                  "_type": "UMLAttribute",
+                  "_id": "AAAAAAFF+h3vjM0=",
+                  "name": "year_ji",
+                  "type": "str",
+                  "visibility": "public"
+                },
+                {
+                  "_type": "UMLAttribute",
+                  "_id": "AAAAAAFF+h3vjM1=",
+                  "name": "month_gan",
+                  "type": "str",
+                  "visibility": "public"
+                },
+                {
+                  "_type": "UMLAttribute",
+                  "_id": "AAAAAAFF+h3vjM2=",
+                  "name": "month_ji",
+                  "type": "str",
+                  "visibility": "public"
+                },
+                {
+                  "_type": "UMLAttribute",
+                  "_id": "AAAAAAFF+h3vjM3=",
+                  "name": "day_gan",
+                  "type": "str",
+                  "visibility": "public"
+                },
+                {
+                  "_type": "UMLAttribute",
+                  "_id": "AAAAAAFF+h3vjM4=",
+                  "name": "day_ji",
+                  "type": "str",
+                  "visibility": "public"
+                }
+              ],
+              "operations": [
+                {
+                  "_type": "UMLOperation",
+                  "_id": "AAAAAAFF+h3vjM5=",
+                  "name": "pillars",
+                  "returnType": "List[Tuple[str, str]]",
+                  "visibility": "public"
+                }
+              ]
+            },
+            {
+              "_type": "UMLClass",
+              "_id": "AAAAAAFF+h3vjM6=",
+              "name": "DataValidator",
+              "operations": [
+                {
+                  "_type": "UMLOperation",
+                  "_id": "AAAAAAFF+h3vjM7=",
+                  "name": "validate_birth_date",
+                  "visibility": "public",
+                  "parameters": [
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjM8=",
+                      "name": "year",
+                      "type": "int",
+                      "direction": "in"
+                    },
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjM9=",
+                      "name": "month",
+                      "type": "int",
+                      "direction": "in"
+                    },
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNA=",
+                      "name": "day",
+                      "type": "int",
+                      "direction": "in"
+                    }
+                  ],
+                  "returnType": "void"
+                },
+                {
+                  "_type": "UMLOperation",
+                  "_id": "AAAAAAFF+h3vjNB=",
+                  "name": "validate_saju_data",
+                  "visibility": "public",
+                  "parameters": [
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNC=",
+                      "name": "saju",
+                      "type": "Dict[str, str]",
+                      "direction": "in"
+                    }
+                  ],
+                  "returnType": "void"
+                },
+                {
+                  "_type": "UMLOperation",
+                  "_id": "AAAAAAFF+h3vjND=",
+                  "name": "sanitize_user_input",
+                  "visibility": "public",
+                  "parameters": [
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNE=",
+                      "name": "input_data",
+                      "type": "Dict[str, Any]",
+                      "direction": "in"
+                    }
+                  ],
+                  "returnType": "Dict[str, Any]"
+                }
+              ]
+            },
+            {
+              "_type": "UMLClass",
+              "_id": "AAAAAAFF+h3vjNF=",
+              "name": "PersonalityAnalyzer",
+              "operations": [
+                {
+                  "_type": "UMLOperation",
+                  "_id": "AAAAAAFF+h3vjNG=",
+                  "name": "analyze_five_elements",
+                  "visibility": "public",
+                  "parameters": [
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNH=",
+                      "name": "saju",
+                      "type": "Dict[str, str]",
+                      "direction": "in"
+                    }
+                  ],
+                  "returnType": "Dict[str, float]"
+                },
+                {
+                  "_type": "UMLOperation",
+                  "_id": "AAAAAAFF+h3vjNI=",
+                  "name": "calculate_8_traits",
+                  "visibility": "public",
+                  "parameters": [
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNJ=",
+                      "name": "saju",
+                      "type": "Dict[str, str]",
+                      "direction": "in"
+                    }
+                  ],
+                  "returnType": "Dict[str, float]"
+                },
+                {
+                  "_type": "UMLOperation",
+                  "_id": "AAAAAAFF+h3vjNK=",
+                  "name": "generate_personality_report",
+                  "visibility": "public",
+                  "parameters": [
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNL=",
+                      "name": "traits",
+                      "type": "Dict[str, float]",
+                      "direction": "in"
+                    }
+                  ],
+                  "returnType": "str"
+                }
+              ]
+            },
+            {
+              "_type": "UMLClass",
+              "_id": "AAAAAAFF+h3vjNM=",
+              "name": "CharacterSystem",
+              "attributes": [
+                {
+                  "_type": "UMLAttribute",
+                  "_id": "AAAAAAFF+h3vjNN=",
+                  "name": "_CHAR_INFO",
+                  "type": "Dict[str, Dict[str, str]]",
+                  "visibility": "private"
+                }
+              ],
+              "operations": [
+                {
+                  "_type": "UMLOperation",
+                  "_id": "AAAAAAFF+h3vjNO=",
+                  "name": "get_character_info",
+                  "visibility": "public",
+                  "parameters": [
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNP=",
+                      "name": "character_type",
+                      "type": "str",
+                      "direction": "in"
+                    }
+                  ],
+                  "returnType": "Dict[str, str]"
+                },
+                {
+                  "_type": "UMLOperation",
+                  "_id": "AAAAAAFF+h3vjNQ=",
+                  "name": "generate_character_image",
+                  "visibility": "public",
+                  "parameters": [
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNR=",
+                      "name": "character_type",
+                      "type": "str",
+                      "direction": "in"
+                    }
+                  ],
+                  "returnType": "str"
+                },
+                {
+                  "_type": "UMLOperation",
+                  "_id": "AAAAAAFF+h3vjNS=",
+                  "name": "get_personality_description",
+                  "visibility": "public",
+                  "parameters": [
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNT=",
+                      "name": "traits",
+                      "type": "Dict[str, float]",
+                      "direction": "in"
+                    }
+                  ],
+                  "returnType": "str"
+                }
+              ]
+            },
+            {
+              "_type": "UMLClass",
+              "_id": "AAAAAAFF+h3vjNU=",
+              "name": "SajuCalculator",
+              "attributes": [
+                {
+                  "_type": "UMLAttribute",
+                  "_id": "AAAAAAFF+h3vjNV=",
+                  "name": "validator",
+                  "type": "DataValidator",
+                  "visibility": "private"
+                },
+                {
+                  "_type": "UMLAttribute",
+                  "_id": "AAAAAAFF+h3vjNW=",
+                  "name": "analyzer",
+                  "type": "PersonalityAnalyzer",
+                  "visibility": "private"
+                },
+                {
+                  "_type": "UMLAttribute",
+                  "_id": "AAAAAAFF+h3vjNX=",
+                  "name": "characters",
+                  "type": "CharacterSystem",
+                  "visibility": "private"
+                },
+                {
+                  "_type": "UMLAttribute",
+                  "_id": "AAAAAAFF+h3vjNY=",
+                  "name": "sky_model",
+                  "type": "Optional[Model]",
+                  "visibility": "private"
+                },
+                {
+                  "_type": "UMLAttribute",
+                  "_id": "AAAAAAFF+h3vjNZ=",
+                  "name": "earth_model",
+                  "type": "Optional[Model]",
+                  "visibility": "private"
+                }
+              ],
+              "operations": [
+                {
+                  "_type": "UMLOperation",
+                  "_id": "AAAAAAFF+h3vjNa=",
+                  "name": "get_birth_data",
+                  "visibility": "public",
+                  "parameters": [
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNb=",
+                      "name": "year",
+                      "type": "int",
+                      "direction": "in"
+                    },
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNc=",
+                      "name": "month",
+                      "type": "int",
+                      "direction": "in"
+                    },
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNd=",
+                      "name": "day",
+                      "type": "int",
+                      "direction": "in"
+                    }
+                  ],
+                  "returnType": "Dict[str, str]"
+                },
+                {
+                  "_type": "UMLOperation",
+                  "_id": "AAAAAAFF+h3vjNe=",
+                  "name": "calculate_personal_traits",
+                  "visibility": "public",
+                  "parameters": [
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNf=",
+                      "name": "saju",
+                      "type": "Dict[str, str]",
+                      "direction": "in"
+                    }
+                  ],
+                  "returnType": "Dict[str, float]"
+                },
+                {
+                  "_type": "UMLOperation",
+                  "_id": "AAAAAAFF+h3vjNg=",
+                  "name": "calculate_compatibility",
+                  "visibility": "public",
+                  "parameters": [
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNh=",
+                      "name": "saju1",
+                      "type": "Dict[str, str]",
+                      "direction": "in"
+                    },
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNi=",
+                      "name": "saju2",
+                      "type": "Dict[str, str]",
+                      "direction": "in"
+                    },
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNj=",
+                      "name": "gender1",
+                      "type": "int",
+                      "direction": "in"
+                    },
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNk=",
+                      "name": "gender2",
+                      "type": "int",
+                      "direction": "in"
+                    }
+                  ],
+                  "returnType": "Dict[str, float]"
+                },
+                {
+                  "_type": "UMLOperation",
+                  "_id": "AAAAAAFF+h3vjNl=",
+                  "name": "determine_character_type",
+                  "visibility": "public",
+                  "parameters": [
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNm=",
+                      "name": "saju",
+                      "type": "Dict[str, str]",
+                      "direction": "in"
+                    }
+                  ],
+                  "returnType": "str"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_type": "UMLPackage",
+          "_id": "AAAAAAFF+h3vjNn=",
+          "name": "community",
+          "ownedElements": [
+            {
+              "_type": "UMLClass",
+              "_id": "AAAAAAFF+h3vjNo=",
+              "name": "User",
+              "attributes": [
+                {
+                  "_type": "UMLAttribute",
+                  "_id": "AAAAAAFF+h3vjNp=",
+                  "name": "user_id",
+                  "type": "int",
+                  "visibility": "public"
+                },
+                {
+                  "_type": "UMLAttribute",
+                  "_id": "AAAAAAFF+h3vjNq=",
+                  "name": "username",
+                  "type": "str",
+                  "visibility": "public"
+                },
+                {
+                  "_type": "UMLAttribute",
+                  "_id": "AAAAAAFF+h3vjNr=",
+                  "name": "email",
+                  "type": "str",
+                  "visibility": "public"
+                },
+                {
+                  "_type": "UMLAttribute",
+                  "_id": "AAAAAAFF+h3vjNs=",
+                  "name": "character_type",
+                  "type": "str",
+                  "visibility": "public"
+                },
+                {
+                  "_type": "UMLAttribute",
+                  "_id": "AAAAAAFF+h3vjNt=",
+                  "name": "saju_data",
+                  "type": "Dict[str, str]",
+                  "visibility": "public"
+                }
+              ],
+              "operations": [
+                {
+                  "_type": "UMLOperation",
+                  "_id": "AAAAAAFF+h3vjNu=",
+                  "name": "get_profile",
+                  "visibility": "public",
+                  "returnType": "Dict[str, Any]"
+                },
+                {
+                  "_type": "UMLOperation",
+                  "_id": "AAAAAAFF+h3vjNv=",
+                  "name": "update_character",
+                  "visibility": "public",
+                  "parameters": [
+                    {
+                      "_type": "UMLParameter",
+                      "_id": "AAAAAAFF+h3vjNw=",
+                      "name": "character_type",
+                      "type": "str",
+                      "direction": "in"
+                    }
+                  ],
+                  "returnType": "void"
+                }
+              ]
+            },
+            {
+              "_type": "UMLClass",
+              "_id": "AAAAAAFF+h3vjNx=",
+              "name": "UserService"
+            },
+            {
+              "_type": "UMLClass",
+              "_id": "AAAAAAFF+h3vjNy=",
+              "name": "Post"
+            },
+            {
+              "_type": "UMLClass",
+              "_id": "AAAAAAFF+h3vjNz=",
+              "name": "Comment"
+            },
+            {
+              "_type": "UMLClass",
+              "_id": "AAAAAAFF+h3vjN0=",
+              "name": "BoardService"
+            },
+            {
+              "_type": "UMLClass",
+              "_id": "AAAAAAFF+h3vjN1=",
+              "name": "CompatibilityRequest"
+            },
+            {
+              "_type": "UMLClass",
+              "_id": "AAAAAAFF+h3vjN2=",
+              "name": "CompatibilityService"
+            }
+          ]
+        },
+        {
+          "_type": "UMLPackage",
+          "_id": "AAAAAAFF+h3vjN3=",
+          "name": "celebrity",
+          "ownedElements": [
+            {
+              "_type": "UMLClass",
+              "_id": "AAAAAAFF+h3vjN4=",
+              "name": "Celebrity"
+            },
+            {
+              "_type": "UMLClass",
+              "_id": "AAAAAAFF+h3vjN5=",
+              "name": "CelebrityCompatibilityService"
+            }
+          ]
+        },
+        {
+          "_type": "UMLPackage",
+          "_id": "AAAAAAFF+h3vjN6=",
+          "name": "database",
+          "ownedElements": [
+            {
+              "_type": "UMLClass",
+              "_id": "AAAAAAFF+h3vjN7=",
+              "name": "DatabaseManager"
+            }
+          ]
+        }
+      ],
+      "diagrams": [
+        {
+          "_type": "UMLClassDiagram",
+          "_id": "AAAAAAFF+h3vjN8=",
+          "name": "사주분석_앱_클래스_다이어그램",
+          "model": "AAAAAAFF+h3vjMw=",
+          "ownedViews": []
+        }
+      ]
+    }
+  ]
+}
+

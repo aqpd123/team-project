@@ -1,0 +1,29 @@
+@startuml 게시글_작성
+
+autonumber
+
+actor User as U
+participant BoardUI as B
+participant "PostController\n(Flask API)" as PC
+participant "BoardService" as BS
+database DB
+
+U -> B: 글쓰기 제출 {title, content, board_type}
+B -> PC: POST /api/v1/posts {...}
+PC -> BS: create_post(user_id, title, content, board_type)
+BS -> DB: INSERT posts
+alt 성공
+  DB --> BS: new post_id
+  BS --> PC: Post
+  PC --> B: 201 Created
+  B --> U: 작성 완료
+else 실패(검증/DB)
+  DB --> BS: error
+  BS --> PC: 400/500
+  PC --> B: 에러 코드+메시지
+  B --> U: 수정/재시도 안내
+end
+
+@enduml
+
+

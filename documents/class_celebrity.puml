@@ -1,0 +1,27 @@
+@startuml celebrity_상세
+
+top to bottom direction
+skinparam linetype ortho
+
+class Celebrity {
+  +celebrity_id: int
+  +name: str
+  +birth_date: datetime
+}
+
+class CelebrityCompatibilityService {
+  +get_celebrity_list(page:int, limit:int): List[Celebrity]
+  +get_celebrity_by_id(id:int): Optional[Celebrity]
+  +calculate_compatibility(user_saju: Dict[str,str], celebrity_id:int): Dict[str,float]
+}
+
+class SajuCalculator
+class DatabaseManager
+
+CelebrityCompatibilityService ..> SajuCalculator : calculate
+CelebrityCompatibilityService ..> DatabaseManager
+CelebrityCompatibilityService --> Celebrity : manages
+
+@enduml
+
+

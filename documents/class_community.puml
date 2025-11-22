@@ -1,0 +1,63 @@
+@startuml community_상세
+
+top to bottom direction
+skinparam linetype ortho
+
+class User {
+  +user_id: int
+  +username: str
+  +email: str
+  +character_type: str
+}
+
+class Post {
+  +post_id: int
+  +author_id: int
+  +title: str
+  +content: str
+  +board_type: str
+  +created_at: datetime
+}
+
+class Comment {
+  +comment_id: int
+  +post_id: int
+  +author_id: int
+  +content: str
+}
+
+class CompatibilityRequest {
+  +request_id: int
+  +requester_id: int
+  +target_id: int
+  +status: str
+}
+
+class UserService {
+  +register_user(username:str, email:str, password:str): User
+  +login_user(username:str, password:str): Optional[User]
+}
+
+class BoardService {
+  +create_post(user_id:int, title:str, content:str, board_type:str): Post
+  +get_posts(board_type:str, page:int, limit:int): List[Post]
+}
+
+class CompatibilityService {
+  +create_request(requester_id:int, target_id:int): CompatibilityRequest
+  +accept_request(request_id:int, target_id:int): Optional[Dict[str,float]]
+}
+
+class DatabaseManager
+
+UserService ..> DatabaseManager
+BoardService ..> DatabaseManager
+CompatibilityService ..> DatabaseManager
+
+User "1" -- "0..*" Post : creates
+Post "1" *-- "0..*" Comment : has
+User "1" -- "0..*" CompatibilityRequest : requests
+
+@enduml
+
+

@@ -1,0 +1,34 @@
+@startuml 개인성격분석_시퀀스
+
+autonumber
+
+actor User as U
+participant FlutterApp as F
+participant "SajuController\n(Flask API)" as C
+participant "SajuCalculator" as SC
+participant "PersonalityAnalyzer" as PA
+
+U -> F: 개인 성격 분석 버튼 클릭
+F -> C: POST /api/v1/saju/analyze-personality\n{ saju, gender }
+C -> SC: analyze_personality(saju, gender)
+SC -> PA: analyze_five_elements(saju)
+PA --> SC: five
+SC -> PA: calculate_8_traits(saju)
+PA --> SC: traits
+SC -> SC: calculate_personality_flags_hd2(saju, gender)
+note over SC
+내부 단계:
+ - _build_tokens_from_saju
+ - _predict_sky / _predict_earth
+ - _original_calculate(자기-자기)
+ - sal0 -> flags 추출
+end note
+SC -> PA: generate_personality_report(traits)
+PA --> SC: report
+SC --> C: { five, traits, flags, report }
+C --> F: 200 OK JSON
+F --> U: 결과 화면 표시
+
+@enduml
+
+

@@ -1,0 +1,25 @@
+# Virtual environments
+.venv*/
+venv/
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment/config
+.env
+env.local
+
+# Databases / local artifacts
+app.db
+users.db
+
+# Local test scripts
+check_saju.py
+check_tf.py
+
+# IDE / OS files
+.DS_Store
+Thumbs.db
+

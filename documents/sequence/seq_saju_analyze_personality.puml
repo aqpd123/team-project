@@ -1,0 +1,31 @@
+@startuml 개인성격분석_요청
+
+autonumber
+
+actor User as U
+participant FlutterApp as F
+participant "SajuController\n(Flask API)" as SCT
+participant "SajuCalculator" as SC
+participant "PersonalityAnalyzer" as PA
+
+U -> F: 개인 성격 분석 버튼
+F -> SCT: POST /api/v1/saju/analyze-personality {saju, gender}
+SCT -> SC: analyze_personality(saju, gender)
+SC -> PA: analyze_five_elements(saju)
+PA --> SC: five
+SC -> PA: calculate_8_traits(saju)
+PA --> SC: traits
+SC -> PA: generate_personality_report(traits)
+PA --> SC: report
+SC --> SCT: {five, traits, flags, report}
+SCT --> F: 200 JSON
+F --> U: 결과 화면 표시
+
+alt 검증 실패
+  SCT --> F: 400 잘못된 입력(날짜/필드 누락)
+  F --> U: 수정 안내
+end
+
+@enduml
+
+

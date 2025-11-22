@@ -1,0 +1,27 @@
+@startuml 궁합요청_수락_시퀀스
+
+autonumber
+
+actor "UserB(대상자)" as UB
+participant FlutterApp as F
+participant "CompatibilityController\n(Flask API)" as CC
+participant "CompatibilityService" as CS
+database "DatabaseManager" as DB
+participant "SajuCalculator" as SC
+
+UB -> F: 궁합 요청 수락
+F -> CC: POST /api/v1/compatibility/requests/{id}/accept (auth)
+CC -> CS: accept_request(request_id, target_id)
+CS -> DB: SELECT request, requester_saju, target_saju
+DB --> CS: saju1, saju2, gender1, gender2
+CS -> SC: calculate_compatibility(saju1, saju2, gender1, gender2)
+SC --> CS: { original, final, stress }
+CS -> DB: UPDATE requests SET status='accepted',\n result={...}
+DB --> CS: ok
+CS --> CC: { compatibility_result, status }
+CC --> F: 200 OK JSON
+F --> UB: 결과 화면 표시
+
+@enduml
+
+

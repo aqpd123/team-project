@@ -1,0 +1,33 @@
+@startuml 유명인_궁합보기
+
+autonumber
+
+actor User as U
+participant FlutterApp as F
+participant "CelebrityController\n(Flask API)" as CCT
+participant "CelebrityCompatibilityService" as CCS
+participant "SajuCalculator" as SC
+database DB
+
+U -> F: 유명인과 궁합 보기
+F -> CCT: GET /api/v1/celebrities?page=&limit=
+CCT -> CCS: get_celebrity_list(page, limit)
+CCS -> DB: SELECT celebrities LIMIT/OFFSET
+DB --> CCS: list
+CCS --> CCT: list
+CCT --> F: 200 list
+
+U -> F: 특정 유명인 선택
+F -> CCT: POST /api/v1/celebrities/{id}/compatibility {saju1}
+CCT -> CCS: calculate_compatibility(user_saju, id)
+CCS -> DB: SELECT celebrity by id (saju_data AS saju2)
+DB --> CCS: saju2
+CCS -> SC: calculate_compatibility(saju1, saju2, gender1, gender2)
+SC --> CCS: scores
+CCS --> CCT: result
+CCT --> F: 200 result
+F --> U: 결과 표시
+
+@enduml
+
+

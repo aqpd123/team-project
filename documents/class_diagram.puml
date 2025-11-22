@@ -1,0 +1,210 @@
+@startuml
+left to right direction
+skinparam linetype ortho
+skinparam nodesep 20
+skinparam ranksep 20
+skinparam classAttributeIconSize 0
+!define PUBLIC + 
+!define PRIVATE -
+!define PROTECTED #
+
+' 패키지 정의
+top to bottom direction
+package "domain" {
+  ' 상단: community, 하단: saju_core + celebrity(가로 배치)
+
+  package "community" {
+      
+      ' ==== 사용자 관리 ====
+      
+      class User {
+          +user_id: int
+          +username: str
+          +email: str
+          +character_type: str
+          +saju_data: Dict[str, str]
+          +get_profile(): Dict[str, Any]
+          +update_character(character_type: str): void
+      }
+      
+      class UserService {
+          +register_user(username: str, email: str, password: str): User
+          +login_user(username: str, password: str): Optional[User]
+          +get_user_by_id(user_id: int): Optional[User]
+          +update_user_character(user_id: int, character_type: str): void
+      }
+      
+      ' ==== 게시판 시스템 ====
+      
+      class Post {
+          +post_id: int
+          +author_id: int
+          +title: str
+          +content: str
+          +board_type: str
+          +created_at: datetime
+          +updated_at: datetime
+          +view_count: int
+          +like_count: int
+      }
+      
+      class Comment {
+          +comment_id: int
+          +post_id: int
+          +author_id: int
+          +content: str
+          +created_at: datetime
+          +updated_at: datetime
+      }
+      
+      class BoardService {
+          +create_post(user_id: int, title: str, content: str, board_type: str): Post
+          +get_posts(board_type: str, page: int, limit: int): List[Post]
+          +get_post_by_id(post_id: int): Optional[Post]
+          +update_post(post_id: int, user_id: int, title: str, content: str): bool
+          +delete_post(post_id: int, user_id: int): bool
+          +add_comment(post_id: int, user_id: int, content: str): Comment
+          +get_comments(post_id: int): List[Comment]
+          +like_post(post_id: int, user_id: int): void
+      }
+      
+      ' ==== 궁합 요청 시스템 ====
+      
+      class CompatibilityRequest {
+          +request_id: int
+          +requester_id: int
+          +target_id: int
+          +status: str
+          +created_at: datetime
+          +compatibility_result: Optional[Dict[str, float]]
+      }
+      
+      class CompatibilityService {
+          +create_request(requester_id: int, target_id: int): CompatibilityRequest
+          +get_requests(user_id: int): List[CompatibilityRequest]
+          +accept_request(request_id: int, target_id: int): Optional[Dict[str, float]]
+          +reject_request(request_id: int, target_id: int): void
+          +calculate_user_compatibility(user1_id: int, user2_id: int): Dict[str, float]
+      }
+  }
+
+  together {
+    package "saju_core" {
+    
+    ' ==== 유틸리티 클래스들 ====
+    
+    class SajuData {
+        +year_gan: str
+        +year_ji: str
+        +month_gan: str
+        +month_ji: str
+        +day_gan: str
+        +day_ji: str
+        +pillars(): List[Tuple[str, str]]
+    }
+    
+    ' ==== 검증 클래스 ====
+    
+    class DataValidator {
+        +validate_birth_date(year: int, month: int, day: int): void
+        +validate_saju_data(saju: Dict[str, str]): void
+        +sanitize_user_input(input_data: Dict[str, Any]): Dict[str, Any]
+    }
+    
+    ' ==== 성격 분석 클래스 ====
+    
+    class PersonalityAnalyzer {
+        +analyze_five_elements(saju: Dict[str, str]): Dict[str, float]
+        +calculate_8_traits(saju: Dict[str, str]): Dict[str, float]
+        +generate_personality_report(traits: Dict[str, float]): str
+    }
+    
+    ' ==== 오행 캐릭터 시스템 ====
+    
+    class CharacterSystem {
+        -_CHAR_INFO: Dict[str, Dict[str, str]]
+        +get_character_info(character_type: str): Dict[str, str]
+        +generate_character_image(character_type: str): str
+        +get_personality_description(traits: Dict[str, float]): str
+    }
+    
+    ' ==== 사주 계산 메인 클래스 ====
+    
+    class SajuCalculator {
+        -validator: DataValidator
+        -analyzer: PersonalityAnalyzer
+        -characters: CharacterSystem
+        -sky_model: Optional[Model]
+        -earth_model: Optional[Model]
+        +get_birth_data(year: int, month: int, day: int): Dict[str, str]
+        +calculate_personal_traits(saju: Dict[str, str]): Dict[str, float]
+        +calculate_compatibility(saju1: Dict[str, str], saju2: Dict[str, str], gender1: int, gender2: int): Dict[str, float]
+        +determine_character_type(saju: Dict[str, str]): str
+        +calculate_personality_flags_hd2(saju: Dict[str, str], gender: int=0): Dict[str, Any]
+        +analyze_personality(saju: Dict[str, str], gender: int=0): Dict[str, Any]
+        -_build_tokens_from_saju(saju: Dict[str, str]): List[int]
+        -_predict_sky(i: int, j: int): float
+        -_predict_earth(i: int, j: int): float
+        -_original_calculate(token0, token1, gender0, gender1, s): Tuple[float, List[float], List[float]]
+    }
+    }
+
+    package "celebrity" {
+    
+    ' ==== 유명인 정보 ====
+    
+    class Celebrity {
+        +celebrity_id: int
+        +name: str
+        +birth_date: datetime
+        +saju_data: Dict[str, str]
+        +character_type: str
+        +profile_image_url: str
+    }
+    
+    class CelebrityCompatibilityService {
+        +get_celebrity_list(page: int, limit: int): List[Celebrity]
+        +get_celebrity_by_id(celebrity_id: int): Optional[Celebrity]
+        +calculate_compatibility(user_saju: Dict[str, str], celebrity_id: int): Dict[str, float]
+        +get_compatibility_description(compatibility: Dict[str, float]): str
+    }
+    }
+  }
+}
+left to right direction
+
+package "database" {
+    
+    class DatabaseManager {
+        +get_connection(): Connection
+        +execute_query(query: str, params: tuple): List[Dict]
+        +execute_update(query: str, params: tuple): int
+        +close_connection(): void
+    }
+}
+
+' 관계 정의
+SajuCalculator *-- DataValidator : uses
+SajuCalculator *-- PersonalityAnalyzer : uses
+SajuCalculator *-- CharacterSystem : uses
+PersonalityAnalyzer ..> SajuData : uses
+
+UserService --> User : manages
+BoardService --> Post : manages
+BoardService --> Comment : manages
+BoardService --> User : uses
+CompatibilityService --> CompatibilityRequest : manages
+CompatibilityService --> User : uses
+CompatibilityService ..> SajuCalculator : uses
+CelebrityCompatibilityService --> Celebrity : manages
+CelebrityCompatibilityService ..> SajuCalculator : uses
+
+UserService ..> DatabaseManager : uses
+BoardService ..> DatabaseManager : uses
+CompatibilityService ..> DatabaseManager : uses
+CelebrityCompatibilityService ..> DatabaseManager : uses
+
+Post "1" *-- "0..*" Comment : has
+User "1" -- "0..*" Post : creates
+User "1" -- "0..*" CompatibilityRequest : requests
+@enduml

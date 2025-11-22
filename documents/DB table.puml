@@ -1,0 +1,132 @@
+@startuml
+' --- 3.1과 동일한 스타일 적용 ---
+skinparam class {
+    BorderColor #505050
+    ArrowColor #505050
+    BackgroundColor White
+}
+skinparam package {
+    BackgroundColor #F0F0F0
+    BorderColor #505050
+}
+skinparam shadowing false
+
+' ---------------------------------
+' <<T>> = DB 테이블
+' ---------------------------------
+
+package "Database Tables" {
+
+    class "User" as USERS <<T>> {
+      {key} user_id : int
+      --
+      username : str {unique}
+      email : str {unique}
+      password_hash : str
+      character_type : str
+      birth_date : date
+      gender : int
+      saju_data : String
+    }
+
+    class "Post" as POSTS <<T>> {
+      {key} post_id : int
+      --
+      {FK} author_id : int
+      title : str
+      content : String
+      board_type : str
+      created_at : datetime
+      updated_at : datetime
+      view_count : int
+      like_count : int
+    }
+    
+    class "Comment" as COMMENTS <<T>> {
+      {key} comment_id : int
+      --
+      {FK} post_id : int
+      {FK} author_id : int
+      content : String
+      created_at : datetime
+      updated_at : datetime
+    }
+    
+    class "CompatibilityRequest" as COMPATIBILITY_REQUESTS <<T>> {
+      {key} request_id : int
+      --
+      {FK} requester_id : int
+      {FK} target_id : int
+      status : str
+      result_original : float
+      result_final : float
+      stress : float
+      compatibility_result : String
+      created_at : datetime
+      responded_at : datetime
+    }
+
+    class "Celebrity" as CELEBRITIES <<T>> {
+      {key} celebrity_id : int
+      --
+      name : str
+      birth_date : datetime
+      character_type : str
+      saju_data : String
+      profile_image_url : str
+    }
+    
+    class "CharacterInfo" as CHARACTER_INFO <<T>> {
+        {key} character_type : str
+        --
+        name : str
+        description : String
+    }
+
+    class "CompatibilityResult" as COMPATIBILITY_RESULTS <<T>> {
+      {key} result_id : int
+      --
+      type_1 : str
+      type_2 : str
+      content : String
+      score : float
+      .. constraints ..
+      {unique} (type_1, type_2)
+    }
+    
+    ' DailyFortune 기능 제거됨(프로젝트 범위 외)
+
+    class "Notification" as NOTIFICATIONS <<T>> {
+      {key} notification_id : int
+      --
+      {FK} user_id : int
+      type : str
+      payload : String
+      is_read : bool
+      created_at : datetime
+    }
+}
+
+' ---------------------------------
+' 관계 (Relationships) 정의
+' ---------------------------------
+
+' 1:N 명시적 관계
+USERS "1" -- "0..*" POSTS : "creates"
+POSTS "1" -- "0..*" COMMENTS : "has"
+USERS "1" -- "0..*" COMPATIBILITY_REQUESTS : "requests"
+USERS "1" -- "0..*" NOTIFICATIONS : "receives"
+
+' FK를 통한 암시적 관계 (점선)
+POSTS ..> USERS : (FK: author_id)
+COMMENTS ..> USERS : (FK: author_id)
+COMMENTS ..> POSTS : (FK: post_id)
+
+COMPATIBILITY_REQUESTS ..> USERS : (FK: target_id)
+NOTIFICATIONS ..> USERS : (FK: user_id)
+
+' 서버 로직을 통해 연결되는 관계
+USERS ..> CHARACTER_INFO : (uses)
+' DailyFortune 제거에 따라 관계 삭제
+CELEBRITIES ..> CHARACTER_INFO : (uses)
+@enduml

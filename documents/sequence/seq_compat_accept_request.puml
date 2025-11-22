@@ -1,0 +1,27 @@
+@startuml 궁합요청_수락
+
+autonumber
+
+actor Author as A
+participant BoardUI as B
+participant "CompatibilityController\n(Flask API)" as CC
+participant "CompatibilityService" as CS
+participant "SajuCalculator" as SC
+database DB
+
+A -> B: 요청 알림 확인
+B -> CC: POST /api/v1/compatibility/requests/{id}/accept
+CC -> CS: accept_request(id, target_id=A)
+CS -> DB: SELECT requester_saju AS saju1, target_saju AS saju2, gender1, gender2
+DB --> CS: saju1, saju2, gender1, gender2
+CS -> SC: calculate_compatibility(saju1, saju2, gender1, gender2)
+SC --> CS: {original, final, stress}
+CS -> DB: UPDATE request SET status='accepted', result fields
+DB --> CS: ok
+CS --> CC: {status, compatibility_result}
+CC --> B: 200 OK
+B --> A: 결과 표시
+
+@enduml
+
+

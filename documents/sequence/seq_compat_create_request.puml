@@ -1,0 +1,31 @@
+@startuml 궁합요청_생성
+
+autonumber
+
+actor User as Reader
+participant BoardUI as B
+participant "CompatibilityController\n(Flask API)" as CC
+participant "CompatibilityService" as CS
+database DB
+
+Reader -> B: "작성자와 궁합 요청" 클릭
+B -> CC: POST /api/v1/compatibility/requests {target_id, post_id}
+CC -> CS: create_request(requester_id, target_id, post_id)
+CS -> DB: SELECT pending WHERE requester_id,target_id
+alt 중복 존재
+  DB --> CS: existing
+  CS --> CC: 409 Conflict
+  CC --> B: 409
+  B --> Reader: 이미 요청됨 안내
+else 없음
+  DB --> CS: none
+  CS -> DB: INSERT compatibility_request(status='pending')
+  DB --> CS: ok
+  CS --> CC: 201 {request_id, status}
+  CC --> B: 201 Created
+  B --> Reader: 요청 완료
+end
+
+@enduml
+
+

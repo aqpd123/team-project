@@ -1,0 +1,63 @@
+@startuml 사주분석_클래스_개요(Compact)
+
+top to bottom direction
+hide methods
+hide attributes
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+package "saju_core" {
+  class SajuCalculator
+  class DataValidator
+  class PersonalityAnalyzer
+  class CharacterSystem
+  class SajuData
+}
+
+package "community" {
+  class BoardService
+  class UserService
+  class CompatibilityService
+  class Post
+  class Comment
+  class User
+  class CompatibilityRequest
+}
+
+package "celebrity" {
+  class CelebrityCompatibilityService
+  class Celebrity
+}
+
+package "database" {
+  class DatabaseManager
+}
+
+' 핵심 관계만 표시
+SajuCalculator --> DataValidator : uses
+SajuCalculator --> PersonalityAnalyzer : uses
+SajuCalculator --> CharacterSystem : uses
+PersonalityAnalyzer ..> SajuData : uses
+
+UserService --> User
+BoardService --> Post
+BoardService --> Comment
+CompatibilityService --> CompatibilityRequest
+
+User -- Post
+User -- CompatibilityRequest
+Post *-- Comment
+
+CelebrityCompatibilityService --> Celebrity
+
+UserService ..> DatabaseManager
+BoardService ..> DatabaseManager
+CompatibilityService ..> DatabaseManager
+CelebrityCompatibilityService ..> DatabaseManager
+
+CompatibilityService ..> SajuCalculator : calculate
+CelebrityCompatibilityService ..> SajuCalculator : calculate
+
+@enduml
+
+

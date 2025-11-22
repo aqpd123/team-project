@@ -1,0 +1,40 @@
+@startuml 인증_로그인_재발급
+
+autonumber
+
+actor User as U
+participant FlutterApp as F
+participant "AuthController\n(Flask API)" as AC
+participant "UserService" as US
+database DB
+
+U -> F: 로그인 제출
+F -> AC: POST /api/v1/auth/login {username, password}
+AC -> US: login_user(username, password)
+alt 성공
+  US -> DB: SELECT user by username
+  DB --> US: user + password_hash
+  US --> AC: user, generate JWT(access, refresh)
+  AC --> F: 200 {access_token, refresh_token}
+  F --> U: 로그인 성공
+else 실패
+  US --> AC: None
+  AC --> F: 401 Unauthorized
+  F --> U: 오류 안내
+end
+
+== 토큰 재발급 ==
+... access 만료 후 ...
+F -> AC: POST /api/v1/auth/refresh {refresh_token}
+AC -> US: verify_refresh(refresh_token)
+alt 유효
+  US --> AC: ok → new access_token
+  AC --> F: 200 {access_token}
+else 무효
+  US --> AC: invalid
+  AC --> F: 401 invalid refresh
+end
+
+@enduml
+
+
