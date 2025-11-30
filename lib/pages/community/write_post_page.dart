@@ -68,10 +68,12 @@ class _WritePostPageState extends State<WritePostPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: MysticBackground(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
+        child: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -124,6 +126,7 @@ class _WritePostPageState extends State<WritePostPage> {
           ),
         ),
       ),
+    ),
     );
   }
 

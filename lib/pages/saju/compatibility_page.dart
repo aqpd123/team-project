@@ -1,6 +1,8 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import '../../controllers/auth_controller.dart' show AuthScope;
+import '../social/friends_page.dart';
 
 class CompatibilityPerson {
   CompatibilityPerson({
@@ -27,9 +29,14 @@ class CompatibilityPerson {
 }
 
 class SajuCompatibilityPage extends StatefulWidget {
-  const SajuCompatibilityPage({super.key, this.onBack});
+  const SajuCompatibilityPage({
+    super.key,
+    this.onBack,
+    this.friendData,
+  });
 
   final VoidCallback? onBack;
+  final FriendData? friendData;
 
   @override
   State<SajuCompatibilityPage> createState() => _SajuCompatibilityPageState();
@@ -43,12 +50,34 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
   String? _gender1;
   String? _gender2;
   bool _showResult = false;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
     _nameCtrl1 = TextEditingController();
     _nameCtrl2 = TextEditingController();
+  }
+
+  void _initializeWithFriendData() {
+    if (_initialized || widget.friendData == null || !mounted) return;
+    _initialized = true;
+    
+    // 사용자 이름 가져오기
+    final auth = AuthScope.of(context);
+    _nameCtrl1.text = auth.user?.name ?? '나';
+    _nameCtrl2.text = widget.friendData!.name;
+    // 샘플 생년월일 설정 (실제로는 사용자와 친구의 사주 정보에서 가져와야 함)
+    _birthDate1 = DateTime(2000, 1, 1);
+    _birthDate2 = DateTime(2000, 1, 1);
+    _gender1 = '남성';
+    _gender2 = '남성';
+    // 결과 바로 표시
+    if (mounted) {
+      setState(() {
+        _showResult = true;
+      });
+    }
   }
 
   @override
@@ -110,6 +139,15 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
 
   @override
   Widget build(BuildContext context) {
+    // 친구 정보가 전달된 경우 초기화 (한 번만 실행)
+    if (widget.friendData != null && !_initialized && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _initializeWithFriendData();
+        }
+      });
+    }
+    
     if (_showResult) {
       return CompatibilityResultView(
         person1Name: _nameCtrl1.text.trim(),

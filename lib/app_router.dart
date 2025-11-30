@@ -179,9 +179,17 @@ class AppRouter {
       ),
       GoRoute(
         path: '/saju/compatibility',
-        builder: (context, state) => SajuCompatibilityPage(
-          onBack: () => context.go('/saju'),
-        ),
+        builder: (context, state) {
+          final extra = state.extra;
+          FriendData? friendData;
+          if (extra is Map<String, dynamic> && extra['friend'] is FriendData) {
+            friendData = extra['friend'] as FriendData;
+          }
+          return SajuCompatibilityPage(
+            onBack: () => friendData != null ? context.go('/friends') : context.go('/saju'),
+            friendData: friendData,
+          );
+        },
       ),
       GoRoute(
         path: '/celebrity-saju',
@@ -291,7 +299,19 @@ class AppRouter {
         path: '/write-post',
         builder: (context, state) => WritePostPage(
           onBack: () => context.go('/board'),
-          onSubmit: (payload) async {},
+          onSubmit: (payload) async {
+            // 게시글 업로드 로직
+            await Future<void>.delayed(const Duration(seconds: 1));
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('게시글이 성공적으로 업로드되었습니다!'),
+                  backgroundColor: Color(0xFF10B981),
+                ),
+              );
+              context.go('/board');
+            }
+          },
         ),
       ),
       GoRoute(
@@ -312,7 +332,10 @@ class AppRouter {
             '/send-message',
             extra: {'name': friend.name, 'id': friend.id},
           ),
-          onCheckCompatibility: (_) => context.go('/saju-compatibility'),
+          onCheckCompatibility: (friend) => context.go(
+            '/saju/compatibility',
+            extra: {'friend': friend},
+          ),
         ),
       ),
       GoRoute(
