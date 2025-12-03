@@ -207,23 +207,38 @@ class _BoardPageState extends State<BoardPage> {
                               ? _emptyState()
                               : RefreshIndicator(
                                   onRefresh: community.refreshPosts,
-                                  child: ListView.separated(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    itemCount: posts.length,
-                                    separatorBuilder: (_, __) =>
-                                        const SizedBox(height: 12),
-                                    itemBuilder: (context, index) {
-                                      final post = posts[index];
-                                      return PostCard(
-                                        title: post.title,
-                                        content: post.content,
-                                        author: post.authorLabel,
-                                        dateLabel: post.dateLabel,
-                                        likes: post.likeCount,
-                                        comments: post.commentCount,
-                                        onTap: () =>
-                                            widget.onOpenPost?.call(post.id),
+                                  child: LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      final screenHeight = MediaQuery.of(context).size.height;
+                                      return ListView.separated(
+                                        physics: const AlwaysScrollableScrollPhysics(),
+                                        itemCount: posts.length + 1, // 마지막에 여백 추가
+                                        separatorBuilder: (_, index) {
+                                          // 마지막 아이템 전에는 구분선, 마지막에는 여백
+                                          if (index < posts.length - 1) {
+                                            return const SizedBox(height: 12);
+                                          }
+                                          return const SizedBox.shrink();
+                                        },
+                                        itemBuilder: (context, index) {
+                                          if (index < posts.length) {
+                                            final post = posts[index];
+                                            return PostCard(
+                                              title: post.title,
+                                              content: post.content,
+                                              author: post.authorLabel,
+                                              dateLabel: post.dateLabel,
+                                              likes: post.likeCount,
+                                              comments: post.commentCount,
+                                              onTap: () =>
+                                                  widget.onOpenPost?.call(post.id),
+                                            );
+                                          }
+                                          // 마지막 아이템: 최소 높이를 위한 여백
+                                          return SizedBox(
+                                            height: screenHeight * 0.3,
+                                          );
+                                        },
                                       );
                                     },
                                   ),
@@ -241,45 +256,58 @@ class _BoardPageState extends State<BoardPage> {
   }
 
   Widget _header() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Flexible(
-          child: const Text(
-            '사주 이야기 💬',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 화면이 좁을 때 버튼 크기와 간격 조정
+        final isNarrow = constraints.maxWidth < 400;
+        final buttonSize = isNarrow ? 36.0 : 40.0;
+        final buttonSpacing = isNarrow ? 4.0 : 6.0;
+        final fontSize = isNarrow ? 22.0 : 26.0;
+        
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              flex: 2,
+              child: Text(
+                '사주 이야기 💬',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w700,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
             ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _roundButton(
-                icon: Icons.mode_edit_outline,
-                background: const Color(0xFFFACC15),
-                iconColor: Colors.black,
-                onTap: widget.onNavigateToWritePost,
-              ),
-              const SizedBox(width: 6),
-              _roundButton(
-                icon: Icons.mail_outline,
-                onTap: widget.onNavigateToMessages,
-              ),
-              const SizedBox(width: 6),
-              _roundButton(
-                icon: Icons.group_outlined,
-                onTap: widget.onNavigateToFriends,
-              ),
-            ],
-          ),
-        ),
-      ],
+            SizedBox(width: buttonSpacing),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _roundButton(
+                  icon: Icons.mode_edit_outline,
+                  background: const Color(0xFFFACC15),
+                  iconColor: Colors.black,
+                  onTap: widget.onNavigateToWritePost,
+                  size: buttonSize,
+                ),
+                SizedBox(width: buttonSpacing),
+                _roundButton(
+                  icon: Icons.mail_outline,
+                  onTap: widget.onNavigateToMessages,
+                  size: buttonSize,
+                ),
+                SizedBox(width: buttonSpacing),
+                _roundButton(
+                  icon: Icons.group_outlined,
+                  onTap: widget.onNavigateToFriends,
+                  size: buttonSize,
+                ),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -439,22 +467,23 @@ class _BoardPageState extends State<BoardPage> {
     Color background = Colors.transparent,
     Color iconColor = Colors.white,
     VoidCallback? onTap,
+    double size = 40,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 40,
-        height: 40,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: background.isTransparent()
               ? Colors.white.withValues(alpha: 0.1)
               : background,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(size / 2),
           border: background.isTransparent()
               ? Border.all(color: Colors.white.withValues(alpha: 0.2))
               : null,
         ),
-        child: Icon(icon, color: iconColor, size: 20),
+        child: Icon(icon, color: iconColor, size: size * 0.5),
       ),
     );
   }
@@ -462,17 +491,32 @@ class _BoardPageState extends State<BoardPage> {
   Widget _emptyState() {
     return RefreshIndicator(
       onRefresh: CommunityScope.of(context).refreshPosts,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: const [
-          SizedBox(height: 80),
-          Center(
-            child: Text(
-              '아직 게시글이 없습니다.',
-              style: TextStyle(color: Colors.white70),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // 빈 상태일 때도 화면 높이만큼 공간을 확보하여 배경이 채워지도록 함
+          final minHeight = constraints.maxHeight > 0 
+              ? constraints.maxHeight 
+              : MediaQuery.of(context).size.height * 0.6;
+          
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: minHeight),
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(height: 80),
+                  Center(
+                    child: Text(
+                      '아직 게시글이 없습니다.',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

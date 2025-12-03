@@ -55,7 +55,19 @@ class CelebrityService:
 
     def _celebrity_summary(self, celeb: Celebrity) -> Dict[str, Any]:
         data = celeb.to_dict()
+        # 사주에서 오행 계산하여 character_type 추가
+        character_type = self.calculator.determine_character_type(celeb.saju)
         data.pop("saju", None)
+        data["character_type"] = character_type
+        # 영어 오행 키를 한글 오행으로 변환
+        element_map = {
+            "wood": "목",
+            "fire": "화",
+            "earth": "토",
+            "metal": "금",
+            "water": "수",
+        }
+        data["element"] = element_map.get(character_type, "목")
         return data
 
     def _require_celebrity(self, celebrity_id: int) -> Celebrity:

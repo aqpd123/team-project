@@ -28,6 +28,16 @@ def _error_response(exc: AppError):
     return jsonify({"error": "서버 오류가 발생했습니다."}), 500
 
 
+def _handle_exception(exc: Exception):
+    """예상치 못한 예외 처리 (디버깅용)"""
+    import traceback
+    error_msg = str(exc)
+    traceback_str = traceback.format_exc()
+    print(f"❌ 예외 발생: {error_msg}")
+    print(traceback_str)
+    return jsonify({"error": f"서버 오류: {error_msg}"}), 500
+
+
 @bp.post("")
 @require_auth()
 def create_post():
@@ -47,6 +57,8 @@ def create_post():
         return jsonify({"post": post}), 201
     except AppError as exc:
         return _error_response(exc)
+    except Exception as exc:
+        return _handle_exception(exc)
 
 
 @bp.get("")
@@ -59,6 +71,8 @@ def list_posts():
         return jsonify({"items": items, "count": len(items), "page": page})
     except AppError as exc:
         return _error_response(exc)
+    except Exception as exc:
+        return _handle_exception(exc)
 
 
 @bp.get("/<int:post_id>")

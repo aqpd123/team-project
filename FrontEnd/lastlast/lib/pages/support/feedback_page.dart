@@ -134,96 +134,100 @@ class _FeedbackPageState extends State<FeedbackPage> {
 
     return Scaffold(
       body: MysticBackground(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _backButton(),
-                  const Text(
-                    '피드백 💌',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
+        padding: EdgeInsets.zero,
+        child: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _backButton(),
+                    const Text(
+                      '피드백 💌',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 48),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  '개발자에게 의견을 들려주세요',
+                  style: TextStyle(color: Color(0xFFA5F3FC)),
+                ),
+                const SizedBox(height: 20),
+                _buildTypeSelector(),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  label: '제목',
+                  hint: '피드백 제목을 입력해주세요',
+                  value: _subject,
+                  onChanged: (v) => setState(() => _subject = v),
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  label: '내용',
+                  hint: '자세한 내용을 입력해주세요',
+                  value: _message,
+                  maxLines: 6,
+                  maxLength: 500,
+                  onChanged: (v) => setState(() => _message = v),
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '${_message.length}/500',
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildTextField(
+                  label: '이메일 (선택)',
+                  hint: '답장을 받고 싶다면 입력하세요',
+                  value: _email,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return null;
+                    final emailRegex = RegExp(r'.+@.+\..+');
+                    if (!emailRegex.hasMatch(value)) {
+                      return '유효한 이메일을 입력해주세요';
+                    }
+                    return null;
+                  },
+                  onChanged: (v) => setState(() => _email = v),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed:
+                      _submitting ? null : () => _handleSubmit(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFACC15),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
                     ),
                   ),
-                  const SizedBox(width: 48),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                '개발자에게 의견을 들려주세요',
-                style: TextStyle(color: Color(0xFFA5F3FC)),
-              ),
-              const SizedBox(height: 20),
-              _buildTypeSelector(),
-              const SizedBox(height: 16),
-              _buildTextField(
-                label: '제목',
-                hint: '피드백 제목을 입력해주세요',
-                value: _subject,
-                onChanged: (v) => setState(() => _subject = v),
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                label: '내용',
-                hint: '자세한 내용을 입력해주세요',
-                value: _message,
-                maxLines: 6,
-                maxLength: 500,
-                onChanged: (v) => setState(() => _message = v),
-              ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  '${_message.length}/500',
-                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  child: _submitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text(
+                          '피드백 보내기',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              _buildTextField(
-                label: '이메일 (선택)',
-                hint: '답장을 받고 싶다면 입력하세요',
-                value: _email,
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) return null;
-                  final emailRegex = RegExp(r'.+@.+\..+');
-                  if (!emailRegex.hasMatch(value)) {
-                    return '유효한 이메일을 입력해주세요';
-                  }
-                  return null;
-                },
-                onChanged: (v) => setState(() => _email = v),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed:
-                    _submitting ? null : () => _handleSubmit(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFACC15),
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-                child: _submitting
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text(
-                        '피드백 보내기',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

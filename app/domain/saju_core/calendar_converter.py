@@ -26,6 +26,9 @@ class GanjiCalculator:
         self._ensure_range(year)
         ys, yg, ms, mg = self._calc_year_month(year, month, day, hour, minute)
         day_stem_idx, day_branch_idx = self._sexagenary_day(year, month, day)
+        time_branch_idx = self._calculate_hour_branch(hour, minute)
+        time_stem_idx = self._calculate_hour_stem(day_stem_idx + 1, time_branch_idx)
+
         return {
             "year_gan": HEAVENLY_STEMS[ys - 1],
             "year_ji": EARTHLY_BRANCHES[yg - 1],
@@ -33,6 +36,8 @@ class GanjiCalculator:
             "month_ji": EARTHLY_BRANCHES[mg - 1],
             "day_gan": HEAVENLY_STEMS[day_stem_idx],
             "day_ji": EARTHLY_BRANCHES[day_branch_idx],
+            "time_gan": HEAVENLY_STEMS[time_stem_idx - 1],
+            "time_ji": EARTHLY_BRANCHES[time_branch_idx - 1],
         }
 
     # ----- hd2 기반 연·월 계산 -----
@@ -148,6 +153,28 @@ class GanjiCalculator:
         stem_idx = index % 10
         branch_idx = index % 12
         return stem_idx, branch_idx
+
+    @staticmethod
+    def _calculate_hour_branch(hour: int, minute: int) -> int:
+        hour = hour % 24
+        slot = ((hour + 1) // 2) + 1
+        if slot > 12:
+            slot -= 12
+        return slot
+
+    @staticmethod
+    def _calculate_hour_stem(day_stem_index: int, hour_branch_index: int) -> int:
+        start_map = {
+            1: 1, 6: 1,
+            2: 3, 7: 3,
+            3: 5, 8: 5,
+            4: 7, 9: 7,
+            5: 9, 10: 9,
+        }
+        start = start_map.get(day_stem_index, 1)
+        idx = start + (hour_branch_index - 1) * 2
+        idx = ((idx - 1) % 10) + 1
+        return idx
 
     @staticmethod
     def _julian_day(year: int, month: int, day: int) -> int:

@@ -91,6 +91,26 @@ class CelebrityCompatibilitySchema(BaseSchema):
     gender = fields.Int(load_default=0, validate=validate.OneOf([0, 1]))
 
 
+class SajuBirthSchema(BaseSchema):
+    year = fields.Int(required=True, validate=validate.Range(min=1904, max=2099))
+    month = fields.Int(required=True, validate=validate.Range(min=1, max=12))
+    day = fields.Int(required=True, validate=validate.Range(min=1, max=31))
+    hour = fields.Int(load_default=12, validate=validate.Range(min=0, max=23))
+    minute = fields.Int(load_default=0, validate=validate.Range(min=0, max=59))
+
+
+class SajuBirthTraitsSchema(BaseSchema):
+    birth = fields.Nested(SajuBirthSchema, required=True)
+    gender = fields.Int(load_default=0, validate=validate.OneOf([0, 1]))
+
+
+class SajuBirthCompatibilitySchema(BaseSchema):
+    birth1 = fields.Nested(SajuBirthSchema, required=True)
+    birth2 = fields.Nested(SajuBirthSchema, required=True)
+    gender1 = fields.Int(load_default=0, validate=validate.OneOf([0, 1]))
+    gender2 = fields.Int(load_default=0, validate=validate.OneOf([0, 1]))
+
+
 def _flatten_errors(messages: Dict[str, Any], prefix: str = "") -> List[str]:
     errors: List[str] = []
     for key, value in messages.items():

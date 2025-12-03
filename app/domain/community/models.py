@@ -92,3 +92,36 @@ class Friendship:
         return data
 
 
+@dataclass(slots=True)
+class Message:
+    message_id: int
+    sender_id: int
+    recipient_id: int
+    content: str
+    is_read: bool
+    created_at: Optional[datetime] = None
+
+    @classmethod
+    def from_record(cls, record: Dict[str, Any]) -> "Message":
+        return cls(
+            message_id=record["message_id"],
+            sender_id=record["sender_id"],
+            recipient_id=record["recipient_id"],
+            content=record["content"],
+            is_read=bool(record.get("is_read", False)),
+            created_at=record.get("created_at"),
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        data = {
+            "message_id": self.message_id,
+            "sender_id": self.sender_id,
+            "recipient_id": self.recipient_id,
+            "content": self.content,
+            "is_read": self.is_read,
+        }
+        if self.created_at:
+            data["created_at"] = self.created_at.isoformat()
+        return data
+
+

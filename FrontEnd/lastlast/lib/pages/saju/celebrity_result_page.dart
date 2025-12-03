@@ -53,9 +53,13 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
       Map<String, String>? userSaju;
       int userGender = 0;
       
-      // SharedPreferences에서 마지막 사주 분석 결과 가져오기
+      // 현재 로그인한 사용자 ID 가져오기
+      final currentUserId = auth.user?.id ?? 0;
+      
+      // SharedPreferences에서 마지막 사주 분석 결과 가져오기 (항상 사용자별 키 사용)
       final prefs = await SharedPreferences.getInstance();
-      final lastSajuJson = prefs.getString('last_saju_analysis');
+      final lastSajuKey = 'last_saju_analysis_$currentUserId';
+      final lastSajuJson = prefs.getString(lastSajuKey);
       
       if (lastSajuJson != null) {
         try {
@@ -219,83 +223,128 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
   }
 
   Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _circleButton(icon: Icons.arrow_back, onTap: widget.onBack),
-        Expanded(
-          child: Center(
-            child: const Text(
-              '궁합 결과 ⭐',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 화면 크기에 따라 폰트 크기 조정
+        final isSmall = constraints.maxWidth < 350;
+        final fontSize = isSmall ? 18.0 : 22.0;
+        
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _circleButton(icon: Icons.arrow_back, onTap: widget.onBack),
+            Expanded(
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '궁합 결과 ⭐',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-        const SizedBox(width: 48),
-      ],
+            const SizedBox(width: 48),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildProfileCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 36,
-            backgroundImage: NetworkImage(widget.celebrity.imageUrl),
-            backgroundColor: Colors.white.withValues(alpha: 0.1),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 화면 크기에 따라 아바타 크기와 폰트 크기 조정
+        final isSmall = constraints.maxWidth < 350;
+        final avatarRadius = isSmall ? 28.0 : 36.0;
+        final nameFontSize = isSmall ? 16.0 : 20.0;
+        final professionFontSize = isSmall ? 12.0 : 14.0;
+        final dateFontSize = isSmall ? 10.0 : 12.0;
+        
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.celebrity.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: avatarRadius,
+                backgroundImage: NetworkImage(widget.celebrity.imageUrl),
+                backgroundColor: Colors.white.withValues(alpha: 0.1),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        widget.celebrity.name,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: nameFontSize,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        widget.celebrity.profession,
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: professionFontSize,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        widget.celebrity.birthDate,
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontSize: dateFontSize,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                    ),
+                    child: Text(
+                      widget.celebrity.element,
+                      style: const TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  widget.celebrity.profession,
-                  style: const TextStyle(color: Colors.white70),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  widget.celebrity.birthDate,
-                  style: const TextStyle(color: Colors.white54, fontSize: 12),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-            ),
-            child: Text(
-              widget.celebrity.element,
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -366,41 +415,57 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
         color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(32),
       ),
-      child: Column(
-        children: [
-          Container(
-            width: 100,
-            height: 100,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFF472B6), Color(0xFF8B5CF6)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                finalScore.toStringAsFixed(0),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // 화면 크기에 따라 원형 점수 표시 크기 조정
+          final isSmall = constraints.maxWidth < 300;
+          final circleSize = isSmall ? 80.0 : 100.0;
+          final scoreFontSize = isSmall ? 28.0 : 36.0;
+          final descFontSize = isSmall ? 16.0 : 18.0;
+          
+          return Column(
+            children: [
+              Container(
+                width: circleSize,
+                height: circleSize,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFF472B6), Color(0xFF8B5CF6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      finalScore.toStringAsFixed(0),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: scoreFontSize,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            description,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+              const SizedBox(height: 12),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  description,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: descFontSize,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

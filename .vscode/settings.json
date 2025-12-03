@@ -1,0 +1,15 @@
+{
+  // Cursor AI 자동 승인 설정
+  "cursor.ai.autoAcceptSuggestions": true,
+  "cursor.ai.autoApplyChanges": true,
+  
+  // VS Code 기본 자동완성 설정
+  "editor.acceptSuggestionOnCommitCharacter": true,
+  "editor.acceptSuggestionOnEnter": "on",
+  "editor.suggestOnTriggerCharacters": true,
+  
+  // 터미널 명령어 자동 실행 관련 (가능한 경우)
+  "terminal.integrated.confirmOnExit": false,
+  "terminal.integrated.confirmOnKill": false
+}
+

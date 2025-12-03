@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// React `pages/my-saju/page.tsx`의 Flutter 버전.
-/// 아직 저장된 데이터가 없다는 빈 상태 메시지를 보여준다.
-class MySajuPage extends StatelessWidget {
+import '../../controllers/auth_controller.dart';
+import '../../models/saju_models.dart';
+import '../../services/api_client.dart';
+import 'components/saju_analysis.dart';
+
+/// 나의 사주 페이지 - 저장된 사주 분석 결과를 표시
+class MySajuPage extends StatefulWidget {
   const MySajuPage({
     super.key,
     this.onBack,
@@ -13,7 +18,171 @@ class MySajuPage extends StatelessWidget {
   final VoidCallback? onNavigateToSaju;
 
   @override
+  State<MySajuPage> createState() => _MySajuPageState();
+}
+
+class _MySajuPageState extends State<MySajuPage> {
+  bool _isLoading = true;
+  SajuAnalysisResult? _result;
+  Map<String, String>? _userInfo;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMySaju();
+  }
+
+  Future<void> _loadMySaju() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      // 현재 로그인한 사용자 확인
+      final auth = AuthScope.of(context);
+      final currentUserId = auth.user?.id ?? 0;
+      
+      if (currentUserId == 0) {
+        setState(() {
+          _isLoading = false;
+          _error = '로그인이 필요합니다';
+        });
+        return;
+      }
+
+      // 데이터베이스에서 사용자 정보 가져오기
+      final api = ApiClient();
+      api.updateToken(auth.user != null ? await _getToken() : null);
+      
+      final userResponse = await api.get('/users/$currentUserId');
+      
+      // 디버깅: 응답 데이터 확인
+      print('🔍 사용자 응답 전체: $userResponse');
+      print('🔍 사용자 응답 키 목록: ${userResponse.keys.toList()}');
+      
+      // 사주 분석 결과 확인
+      final sajuAnalysis = userResponse['saju_analysis'] as Map<String, dynamic>?;
+      final birthDateRaw = userResponse['birth_date'];
+      final birthDate = birthDateRaw?.toString();
+      final gender = userResponse['gender'] as int?;
+      
+      print('🔍 saju_analysis 타입: ${sajuAnalysis.runtimeType}');
+      print('🔍 saju_analysis 값: $sajuAnalysis');
+      print('🔍 saju_analysis가 null인가: ${sajuAnalysis == null}');
+      print('🔍 saju_analysis가 비어있는가: ${sajuAnalysis?.isEmpty ?? true}');
+      if (sajuAnalysis != null) {
+        print('🔍 saju_analysis 키 목록: ${sajuAnalysis.keys.toList()}');
+      }
+      print('🔍 birth_date (raw): $birthDateRaw');
+      print('🔍 birth_date (string): $birthDate');
+      print('🔍 gender: $gender');
+      
+      if (sajuAnalysis == null || sajuAnalysis.isEmpty) {
+        print('⚠️ 사주 분석 결과가 없습니다');
+        setState(() {
+          _isLoading = false;
+          _error = null; // 빈 상태로 표시
+        });
+        return;
+      }
+
+      // 사주 분석 결과를 SajuAnalysisResult로 변환
+      try {
+        print('🔍 사주 분석 결과 파싱 시도: $sajuAnalysis');
+        final result = SajuAnalysisResult.fromJson(sajuAnalysis);
+        print('✅ 사주 분석 결과 파싱 성공');
+      
+        // 사용자 정보 구성
+        final userInfo = <String, String>{
+          'name': userResponse['username']?.toString() ?? '사용자',
+          'birthDate': birthDate ?? '',
+          'gender': gender == 1 ? '남성' : (gender == 0 ? '여성' : ''),
+          'userId': currentUserId.toString(),
+        };
+
+        if (mounted) {
+          setState(() {
+            _result = result;
+            _userInfo = userInfo;
+            _isLoading = false;
+          });
+        }
+      } catch (parseError) {
+        print('❌ 사주 분석 결과 파싱 실패: $parseError');
+        print('❌ 원본 데이터: $sajuAnalysis');
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _error = '저장된 사주 데이터 형식이 올바르지 않습니다.\n새로 사주 분석을 진행해주세요.';
+          });
+        }
+        return;
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          if (e.statusCode == 404) {
+            _error = '저장된 사주가 없습니다.\n사주보기를 통해 나의 운명을 확인해보세요.';
+          } else {
+            _error = '사주 정보를 불러오는 중 오류가 발생했습니다.\n${e.message}';
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = '저장된 사주가 없습니다.\n사주보기를 통해 나의 운명을 확인해보세요.';
+        });
+      }
+    }
+  }
+
+  Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('auth_token');
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // 로딩 중
+    if (_isLoading) {
+      return Scaffold(
+        body: Stack(
+          children: [
+            _buildBackground(),
+            Positioned.fill(
+              child: SafeArea(
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 저장된 사주가 있는 경우 분석 결과 표시
+    if (_result != null && _userInfo != null) {
+      return SajuAnalysisView(
+        summary: SajuSummary(
+          name: _userInfo!['name'] ?? '사용자',
+          birthDate: _userInfo!['birthDate'] ?? '',
+          gender: _userInfo!['gender'] ?? '',
+          saju: _result!.saju,
+        ),
+        result: _result!,
+        onBack: widget.onBack ?? () {},
+      );
+    }
+
+    // 저장된 사주가 없는 경우 빈 상태 표시
     return Scaffold(
       body: Stack(
         children: [
@@ -77,7 +246,7 @@ class MySajuPage extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _circleButton(icon: Icons.arrow_back, onTap: onBack),
+        _circleButton(icon: Icons.arrow_back, onTap: widget.onBack),
         const Text(
           '나의 사주 ⭐',
           style: TextStyle(
@@ -111,10 +280,10 @@ class MySajuPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
-            '저장된 사주가 없어요',
+          Text(
+            _error ?? '저장된 사주가 없어요',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 22,
               fontWeight: FontWeight.w600,
@@ -132,7 +301,7 @@ class MySajuPage extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: onNavigateToSaju,
+            onPressed: widget.onNavigateToSaju,
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
               backgroundColor: const Color(0xFFFACC15),

@@ -123,6 +123,18 @@ notifications = Table(
     Column("created_at", DateTime, server_default=func.now()),
 )
 
+messages = Table(
+    "messages",
+    metadata,
+    Column("message_id", Integer, primary_key=True, autoincrement=True),
+    Column("thread_key", String(50), nullable=False, index=True),
+    Column("sender_id", Integer, ForeignKey("users.user_id"), nullable=False),
+    Column("recipient_id", Integer, ForeignKey("users.user_id"), nullable=False),
+    Column("content", Text, nullable=False),
+    Column("is_read", Boolean, server_default="0"),
+    Column("created_at", DateTime, server_default=func.now()),
+)
+
 
 def create_all(engine) -> None:
     metadata.create_all(engine, checkfirst=True)

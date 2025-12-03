@@ -70,7 +70,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
     final text = _commentCtrl.text.trim();
     if (text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('댓글 내용을 입력해주세요.')),
+        const SnackBar(content: Text('댓글 내용을 입력해 주세요.')),
       );
       return;
     }
@@ -262,7 +262,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '댓글 ${comments.length}',
+            '댓글 ${comments.length}개',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 18,
@@ -284,7 +284,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.04),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.08)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,17 +348,19 @@ class _PostDetailPageState extends State<PostDetailPage> {
             minLines: 3,
             maxLines: 5,
             decoration: InputDecoration(
-              hintText: '댓글을 입력하세요...',
+              hintText: '댓글을 입력해 주세요...',
               hintStyle: const TextStyle(color: Colors.white54),
               filled: true,
               fillColor: Colors.white.withValues(alpha: 0.04),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                borderSide:
+                    BorderSide(color: Colors.white.withValues(alpha: 0.1)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                borderSide:
+                    BorderSide(color: Colors.white.withValues(alpha: 0.1)),
               ),
               focusedBorder: const OutlineInputBorder(
                 borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -386,5 +389,3 @@ class _PostDetailPageState extends State<PostDetailPage> {
     );
   }
 }
-
-

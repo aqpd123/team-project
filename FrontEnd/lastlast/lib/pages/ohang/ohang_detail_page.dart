@@ -181,7 +181,6 @@ class _OhangDetailPageState extends State<OhangDetailPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _circleButton(Icons.arrow_back, widget.onBack),
           const SizedBox(width: 12),
@@ -200,29 +199,37 @@ class _OhangDetailPageState extends State<OhangDetailPage> {
                   child: Icon(widget.element.icon, color: Colors.white),
                 ),
                 const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.element.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.element.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
-                    ),
-                    Text(
-                      widget.element.description,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
+                      Text(
+                        widget.element.description,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 8),
           _circleButton(
             Icons.mode_edit_outline,
             widget.onWritePost,

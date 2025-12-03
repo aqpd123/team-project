@@ -45,100 +45,107 @@ class HelpPage extends StatelessWidget {
     final entries = faqEntries.isEmpty ? _defaultFaqs : faqEntries;
     return Scaffold(
       body: MysticBackground(
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _backButton(),
-                const Text(
-                  '도움말 ❓',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                  ),
+        padding: EdgeInsets.zero,
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _backButton(),
+                    const Text(
+                      '도움말 ❓',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 48),
+                  ],
                 ),
-                const SizedBox(width: 48),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: ListView(
-                children: [
-                  BlurCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          '앱 사용법',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(height: 12),
-                        Text('• 홈 화면에서 개인 사주를 확인하세요',
-                            style: TextStyle(color: Colors.white70)),
-                        Text('• 게시판에서 사용자들과 소통하세요',
-                            style: TextStyle(color: Colors.white70)),
-                        Text('• 더보기에서 각종 설정을 변경할 수 있어요',
-                            style: TextStyle(color: Colors.white70)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  BlurCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '자주 묻는 질문',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        ...entries.map(
-                          (faq) => Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.05),
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Q. ${faq.question}',
-                                  style: const TextStyle(
-                                    color: Color(0xFFFACC15),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'A. ${faq.answer}',
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    height: 1.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 48),
+                  children: [
+                    BlurCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            '앱 사용법',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: 12),
+                          Text('• 홈 화면에서 개인 사주를 확인하세요',
+                              style: TextStyle(color: Colors.white70)),
+                          Text('• 게시판에서 사용자들과 소통하세요',
+                              style: TextStyle(color: Colors.white70)),
+                          Text('• 더보기에서 각종 설정을 변경할 수 있어요',
+                              style: TextStyle(color: Colors.white70)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    BlurCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '자주 묻는 질문',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ...entries.map(
+                            (faq) => Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.05),
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Q. ${faq.question}',
+                                    style: const TextStyle(
+                                      color: Color(0xFFFACC15),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'A. ${faq.answer}',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

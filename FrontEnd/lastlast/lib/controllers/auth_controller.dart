@@ -83,11 +83,37 @@ class AuthController extends ChangeNotifier {
       try {
         final data =
             jsonDecode(userJson) as Map<String, dynamic>;
-        _user = AuthUser.fromJson(data);
+        final restoredUser = AuthUser.fromJson(data);
+        final restoredUserId = restoredUser.id;
+        
+        // 복원된 사용자의 사주 데이터만 남기고 나머지 삭제
+        final allKeys = prefs.getKeys();
+        for (final key in allKeys) {
+          if (key.startsWith('my_saju_result_') || 
+              key.startsWith('my_saju_user_info_') || 
+              key.startsWith('last_saju_analysis_')) {
+            // 복원된 사용자의 키가 아니면 삭제
+            if (!key.endsWith('_$restoredUserId')) {
+              await prefs.remove(key);
+            }
+          }
+        }
+        
+        _user = restoredUser;
         _api.updateToken(token);
       } catch (_) {
         await prefs.remove(_tokenKey);
         await prefs.remove(_userKey);
+      }
+    } else {
+      // 세션이 없으면 모든 사주 데이터 삭제 (로그아웃 상태)
+      final allKeys = prefs.getKeys();
+      for (final key in allKeys) {
+        if (key.startsWith('my_saju_result_') || 
+            key.startsWith('my_saju_user_info_') || 
+            key.startsWith('last_saju_analysis_')) {
+          await prefs.remove(key);
+        }
       }
     }
     _restoring = false;
@@ -109,6 +135,30 @@ class AuthController extends ChangeNotifier {
       throw const ApiException('잘못된 로그인 응답입니다.');
     }
     final user = AuthUser.fromJson(userMap);
+    
+    // 로그인 시 이전 사용자의 사주 데이터 정리 (강화)
+    final prefs = await SharedPreferences.getInstance();
+    final allKeys = prefs.getKeys().toList(); // Set을 List로 변환하여 안전하게 순회
+    final currentUserId = user.id;
+    
+    // 이전 사용자의 사주 데이터 키 찾아서 삭제
+    for (final key in allKeys) {
+      if (key.startsWith('my_saju_result_') || 
+          key.startsWith('my_saju_user_info_') || 
+          key.startsWith('last_saju_analysis_')) {
+        // 현재 사용자의 키가 아니면 삭제
+        final expectedSuffix = '_$currentUserId';
+        if (!key.endsWith(expectedSuffix)) {
+          await prefs.remove(key);
+        }
+      }
+    }
+    
+    // 기존 키(사용자 ID 없이)도 삭제 (마이그레이션)
+    await prefs.remove('my_saju_result');
+    await prefs.remove('my_saju_user_info');
+    await prefs.remove('last_saju_analysis');
+    
     await _persistSession(token, user);
     _api.updateToken(token);
     _user = user;
@@ -122,6 +172,17 @@ class AuthController extends ChangeNotifier {
     String name,
     String nickname,
   ) async {
+    // 회원가입 전에 모든 이전 사용자 사주 데이터 삭제
+    final prefs = await SharedPreferences.getInstance();
+    final allKeys = prefs.getKeys();
+    for (final key in allKeys) {
+      if (key.startsWith('my_saju_result_') || 
+          key.startsWith('my_saju_user_info_') || 
+          key.startsWith('last_saju_analysis_')) {
+        await prefs.remove(key);
+      }
+    }
+    
     await _api.post(
       '/auth/register',
       data: {
@@ -134,11 +195,22 @@ class AuthController extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    final userId = _user?.id ?? 0;
     _user = null;
     _api.updateToken(null);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_userKey);
+    
+    // 이전 사용자의 사주 데이터 삭제 (선택적 - 보안을 위해)
+    // 주의: 이렇게 하면 로그아웃 시 사주 데이터가 삭제됩니다
+    // 데이터를 유지하려면 이 부분을 주석 처리하세요
+    if (userId > 0) {
+      await prefs.remove('last_saju_analysis_$userId');
+      await prefs.remove('my_saju_result_$userId');
+      await prefs.remove('my_saju_user_info_$userId');
+    }
+    
     notifyListeners();
   }
 

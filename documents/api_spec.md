@@ -224,6 +224,42 @@
 - DELETE `/friends/{friendship_id}` (auth; 양측 모두 가능)
 - 응답 200: `{ "friendship_id":7001, "status":"deleted" }`
 
+## 쪽지
+
+### 쪽지 전송
+- POST `/messages` (auth)
+- 요청: `{ "recipient_id": 2, "content": "안녕하세요!" }`
+- 응답 201: `{ "message": {"message_id":10,"sender_id":1,"recipient_id":2,"content":"안녕하세요!","is_read":false,"created_at":"..." } }`
+
+### 최근 대화 목록
+- GET `/messages/threads?limit=20&offset=0` (auth)
+- 응답 200
+```json
+{
+  "items": [
+    {
+      "message_id": 10,
+      "sender_id": 1,
+      "recipient_id": 2,
+      "content": "안녕하세요!",
+      "is_read": false,
+      "created_at": "2025-12-01T09:30:00Z",
+      "unread_count": 2,
+      "peer": { "user_id": 2, "username": "bob", "email": "bob@example.com" }
+    }
+  ],
+  "count": 1
+}
+```
+
+### 특정 친구와의 대화 조회
+- GET `/messages/conversations/{peer_id}?limit=50&before_id=100` (auth)
+- 응답 200: `{ "items": [ {"message_id":90,"sender_id":1,"recipient_id":2,"content":"...", "created_at":"..."} ], "count": 1 }`
+
+### 대화 읽음 처리
+- POST `/messages/conversations/{peer_id}/read` (auth)
+- 응답 200: `{ "status": "ok" }`
+
 ---
 
 ## 유명인

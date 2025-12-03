@@ -66,8 +66,8 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
   void _initializeWithFriendData() {
     if (_initialized || widget.friendData == null || !mounted) return;
     _initialized = true;
-    
-    // 사용자 이름 가져오기
+
+    // 사용자 이름/친구 이름 초기 세팅
     final auth = AuthScope.of(context);
     _nameCtrl1.text = auth.user?.name ?? '나';
     _nameCtrl2.text = widget.friendData!.name;
@@ -81,6 +81,8 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
   }
 
   Future<void> _pickBirthDate(int personIndex) async {
+    // ��¥ ���� �� Ű���尡 �ٽ� �ö���� �ʵ��� ��Ŀ�� ����
+    FocusScope.of(context).unfocus();
     final now = DateTime.now();
     final initial = (personIndex == 1 ? _birthDate1 : _birthDate2) ??
         DateTime(now.year - 20, now.month, now.day);
@@ -110,7 +112,9 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
         _gender1 == null ||
         _gender2 == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('두 사람의 정보를 모두 입력해주세요.')),
+        const SnackBar(
+          content: Text('두 사람의 정보를 모두 입력해 주세요.'),
+        ),
       );
       return;
     }
@@ -126,6 +130,7 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
         month: _birthDate2!.month,
         day: _birthDate2!.day,
       ),
+      // 남성 = 1, 여성 = 0 으로 전송
       gender1: _gender1 == '남성' ? 1 : 0,
       gender2: _gender2 == '남성' ? 1 : 0,
     );
@@ -167,7 +172,7 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
 
   @override
   Widget build(BuildContext context) {
-    // 친구 정보가 전달된 경우 초기화 (한 번만 실행)
+    // 친구 정보가 전달된 경우 초기화(한 번만 실행)
     if (widget.friendData != null && !_initialized && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -175,7 +180,7 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
         }
       });
     }
-    
+
     if (_showResult && _result != null) {
       return CompatibilityResultView(
         person1Name: _nameCtrl1.text.trim(),
@@ -234,7 +239,8 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
                             child: ElevatedButton(
                               onPressed: _isSubmitting ? null : _handleSubmit,
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
                                 backgroundColor: const Color(0xFFF472B6),
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
@@ -252,7 +258,7 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
                                       ),
                                     )
                                   : const Text(
-                                      '궁합 분석하기 💕',
+                                      '궁합 분석하기 시작',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
@@ -298,6 +304,10 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
             alignment: Alignment.center,
             color: Colors.black.withValues(alpha: 0.2),
             colorBlendMode: BlendMode.darken,
+            errorBuilder: (context, error, stackTrace) {
+              // 네트워크 이미지 실패 시에는 에러 위젯을 숨긴다.
+              return const SizedBox.shrink();
+            },
           ),
         ),
         Positioned.fill(
@@ -327,7 +337,7 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
         Expanded(
           child: Center(
             child: const Text(
-              '사주궁합보기 💕',
+              '사주궁합보기 🔮',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 22,
@@ -503,10 +513,12 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? accentColor : Colors.white.withValues(alpha: 0.08),
+          color:
+              isSelected ? accentColor : Colors.white.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? accentColor : Colors.white.withValues(alpha: 0.2),
+            color:
+                isSelected ? accentColor : Colors.white.withValues(alpha: 0.2),
           ),
         ),
         child: Center(
@@ -590,8 +602,7 @@ class CompatibilityResultView extends StatelessWidget {
                             const SizedBox(height: 12),
                             _buildAnalysisCard(
                               title: '💼 사업 궁합',
-                              description:
-                                  '서로의 장점을 살려 시너지를 낼 수 있는 관계입니다. '
+                              description: '서로의 장점을 살려 시너지를 낼 수 있는 관계입니다. '
                                   '한 분은 아이디어를, 다른 분은 실행력을 담당하면 좋은 결과를 얻을 수 있어요.',
                             ),
                             const SizedBox(height: 16),
@@ -797,7 +808,8 @@ class CompatibilityResultView extends StatelessWidget {
     );
   }
 
-  Widget _buildAnalysisCard({required String title, required String description}) {
+  Widget _buildAnalysisCard(
+      {required String title, required String description}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -820,7 +832,8 @@ class CompatibilityResultView extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             description,
-            style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.6),
+            style: const TextStyle(
+                color: Colors.white70, fontSize: 14, height: 1.6),
           ),
         ],
       ),
@@ -864,4 +877,3 @@ class CompatibilityResultView extends StatelessWidget {
     );
   }
 }
-

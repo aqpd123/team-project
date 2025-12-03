@@ -28,49 +28,53 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: MysticBackground(
-        child: ListView(
-          children: [
-            Row(
-              children: [
-                _circleButton(Icons.arrow_back, onBack),
-                const SizedBox(width: 12),
-                const Text(
-                  '프로필 설정',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
+        padding: EdgeInsets.zero,
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
+            children: [
+              Row(
+                children: [
+                  _circleButton(Icons.arrow_back, onBack),
+                  const SizedBox(width: 12),
+                  const Text(
+                    '프로필 설정',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _profileHeader(),
-            const SizedBox(height: 16),
-            _menuButton(
-              icon: Icons.auto_awesome,
-              gradient: const [Color(0xFFFACC15), Color(0xFFF97316)],
-              title: '나의 사주 확인하기',
-              subtitle: '저장된 사주 결과 보기',
-              onTap: onNavigateToMySaju,
-            ),
-            const SizedBox(height: 12),
-            _menuButton(
-              icon: Icons.article_outlined,
-              gradient: const [Color(0xFF38BDF8), Color(0xFF22D3EE)],
-              title: '나의 글 관리',
-              subtitle: '작성한 게시글 확인 및 관리',
-              onTap: onNavigateToMyPosts,
-            ),
-            const SizedBox(height: 12),
-            _menuButton(
-              icon: Icons.settings_outlined,
-              gradient: const [Color(0xFF8B5CF6), Color(0xFFE879F9)],
-              title: '계정 설정',
-              subtitle: '비밀번호 변경 및 계정 관리',
-              onTap: onNavigateToAccountSettings,
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 20),
+              _profileHeader(),
+              const SizedBox(height: 16),
+              _menuButton(
+                icon: Icons.auto_awesome,
+                gradient: const [Color(0xFFFACC15), Color(0xFFF97316)],
+                title: '나의 사주 확인하기',
+                subtitle: '저장된 사주 결과 보기',
+                onTap: onNavigateToMySaju,
+              ),
+              const SizedBox(height: 12),
+              _menuButton(
+                icon: Icons.article_outlined,
+                gradient: const [Color(0xFF38BDF8), Color(0xFF22D3EE)],
+                title: '나의 글 관리',
+                subtitle: '작성한 게시글 확인 및 관리',
+                onTap: onNavigateToMyPosts,
+              ),
+              const SizedBox(height: 12),
+              _menuButton(
+                icon: Icons.settings_outlined,
+                gradient: const [Color(0xFF8B5CF6), Color(0xFFE879F9)],
+                title: '계정 설정',
+                subtitle: '비밀번호 변경 및 계정 관리',
+                onTap: onNavigateToAccountSettings,
+              ),
+            ],
+          ),
         ),
       ),
     );

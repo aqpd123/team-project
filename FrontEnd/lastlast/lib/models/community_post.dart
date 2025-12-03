@@ -47,7 +47,7 @@ class CommunityPost {
   String get ohangKey =>
       _ohangKeys.contains(_normalizedBoardType) ? _normalizedBoardType : '';
 
-  String get authorLabel => '익명 #$authorId';
+  String get authorLabel => '?�명 #$authorId';
 
   String get dateLabel {
     final base = updatedAt ?? createdAt;

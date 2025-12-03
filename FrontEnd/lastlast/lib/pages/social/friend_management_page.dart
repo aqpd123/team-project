@@ -50,26 +50,34 @@ class _FriendManagementPageState extends State<FriendManagementPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            _roundButton(icon: Icons.arrow_back, onTap: widget.onBack),
-                            const SizedBox(width: 12),
-                            const Text(
-                              '친구 관리 ⚙️',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
+                        Expanded(
+                          child: Row(
+                            children: [
+                              _roundButton(icon: Icons.arrow_back, onTap: widget.onBack),
+                              const SizedBox(width: 12),
+                              const Flexible(
+                                child: Text(
+                                  '친구 관리 ⚙️',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         if (_processing)
                           const SizedBox(
                             width: 22,
                             height: 22,
                             child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
+                          )
+                        else
+                          const SizedBox(width: 22),
                       ],
                     ),
                     const SizedBox(height: 12),

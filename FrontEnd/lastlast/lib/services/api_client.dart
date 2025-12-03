@@ -1,6 +1,7 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 
 const String defaultApiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
@@ -25,6 +26,7 @@ class ApiClient {
   ApiClient({
     String? baseUrl,
     Dio? dio,
+    this.onTokenExpired,
   }) : _dio = dio ??
             Dio(
               BaseOptions(
@@ -39,6 +41,7 @@ class ApiClient {
 
   final Dio _dio;
   String? _token;
+  VoidCallback? onTokenExpired;
 
   void updateToken(String? token) {
     _token = token;
@@ -143,6 +146,14 @@ class ApiClient {
       message = err.message!;
     }
 
+    // 영어 오류 메시지를 한국어로 변환
+    message = _translateErrorMessage(message);
+
+    // 토큰 만료 시 자동 로그아웃 처리
+    if (status == 401 && (message.contains('토큰') || message.contains('만료') || message.contains('인증'))) {
+      onTokenExpired?.call();
+    }
+
     if (err.type == DioExceptionType.connectionTimeout ||
         err.type == DioExceptionType.sendTimeout ||
         err.type == DioExceptionType.receiveTimeout) {
@@ -150,6 +161,77 @@ class ApiClient {
     }
 
     return ApiException(message, statusCode: status, details: details);
+  }
+
+  String _translateErrorMessage(String message) {
+    // Marshmallow validation 오류 메시지 한국어 변환
+    final translations = {
+      'email': '이메일',
+      'password': '비밀번호',
+      'username': '사용자명',
+      'Missing data for required field.': '필수 항목이 누락되었습니다.',
+      'Not a valid email address.': '올바른 이메일 주소를 입력해주세요.',
+      'Length must be between': '길이는',
+      'and': '과',
+      'characters long.': '자 사이여야 합니다.',
+      'Shorter than minimum length': '최소 길이보다 짧습니다.',
+      'Longer than maximum length': '최대 길이보다 깁니다.',
+      'Invalid value.': '유효하지 않은 값입니다.',
+      'Field may not be null.': '필수 항목입니다.',
+      'Field may not be blank.': '비어있을 수 없습니다.',
+    };
+
+    String translated = message;
+
+    // 이메일 관련 오류
+    if (translated.toLowerCase().contains('email')) {
+      if (translated.toLowerCase().contains('required') || 
+          translated.toLowerCase().contains('missing')) {
+        translated = '이메일을 입력해주세요.';
+      } else if (translated.toLowerCase().contains('valid') || 
+                 translated.toLowerCase().contains('invalid')) {
+        translated = '올바른 이메일 주소를 입력해주세요.';
+      }
+    }
+
+    // 비밀번호 관련 오류
+    if (translated.toLowerCase().contains('password')) {
+      if (translated.toLowerCase().contains('required') || 
+          translated.toLowerCase().contains('missing')) {
+        translated = '비밀번호를 입력해주세요.';
+      } else if (translated.toLowerCase().contains('length') || 
+                 translated.toLowerCase().contains('shorter')) {
+        if (translated.contains('6')) {
+          translated = '비밀번호는 최소 6자 이상이어야 합니다.';
+        } else {
+          translated = '비밀번호 길이가 올바르지 않습니다.';
+        }
+      }
+    }
+
+    // 사용자명 관련 오류
+    if (translated.toLowerCase().contains('username')) {
+      if (translated.toLowerCase().contains('required') || 
+          translated.toLowerCase().contains('missing')) {
+        translated = '사용자명을 입력해주세요.';
+      } else if (translated.toLowerCase().contains('length')) {
+        translated = '사용자명은 2자 이상 50자 이하여야 합니다.';
+      }
+    }
+
+    // 일반적인 validation 오류 메시지 변환
+    for (final entry in translations.entries) {
+      if (translated.toLowerCase().contains(entry.key.toLowerCase())) {
+        // 이미 특정 오류로 변환된 경우 스킵
+        if (!translated.contains('이메일') && 
+            !translated.contains('비밀번호') && 
+            !translated.contains('사용자명')) {
+          translated = translated.replaceAll(entry.key, entry.value);
+        }
+      }
+    }
+
+    return translated;
   }
 }
 

@@ -67,26 +67,34 @@ class _FriendsPageState extends State<FriendsPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                if (widget.onBack != null) ...[
-                                  _roundButton(
-                                    icon: Icons.arrow_back,
-                                    onTap: widget.onBack,
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  if (widget.onBack != null) ...[
+                                    _roundButton(
+                                      icon: Icons.arrow_back,
+                                      onTap: widget.onBack,
+                                    ),
+                                    const SizedBox(width: 12),
+                                  ],
+                                  const Flexible(
+                                    child: Text(
+                                      '친구 목록 👥',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
                                   ),
-                                  const SizedBox(width: 12),
                                 ],
-                                const Text(
-                                  '친구 목록 👥',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
+                            const SizedBox(width: 8),
                             Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 _roundButton(
                                   icon: Icons.person_add_alt_1_outlined,

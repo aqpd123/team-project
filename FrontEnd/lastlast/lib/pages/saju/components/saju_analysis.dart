@@ -31,7 +31,20 @@ const Map<String, String> _characterLabels = {
 };
 
 const List<String> _stems = ['갑', '을', '병', '정', '무', '기', '경', '신', '임', '계'];
-const List<String> _branches = ['자', '축', '인', '묘', '진', '사', '오', '미', '신', '유', '술', '해'];
+const List<String> _branches = [
+  '자',
+  '축',
+  '인',
+  '묘',
+  '진',
+  '사',
+  '오',
+  '미',
+  '신',
+  '유',
+  '술',
+  '해'
+];
 const Map<String, int> _hourStartMap = {
   '갑': 1,
   '을': 1,
@@ -92,7 +105,7 @@ class SajuAnalysisView extends StatelessWidget {
                       child: SingleChildScrollView(
                         child: Column(
                           children: [
-                    _buildCharacterCard(character),
+                            _buildCharacterCard(character),
                             const SizedBox(height: 16),
                             _buildInfoCard(),
                             const SizedBox(height: 16),
@@ -166,37 +179,48 @@ class SajuAnalysisView extends StatelessWidget {
   }
 
   Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _circleButton(
-          icon: Icons.arrow_back,
-          onTap: onBack,
-        ),
-        Expanded(
-          child: Center(
-            child: Text(
-              '${summary.name.isEmpty ? '사용자' : summary.name}님의 사주 ✨',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                shadows: [
-                  Shadow(
-                    offset: Offset(0, 2),
-                    blurRadius: 6,
-                    color: Colors.black54,
-                  ),
-                ],
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 화면 크기에 따라 폰트 크기 조정
+        final isSmall = constraints.maxWidth < 350;
+        final fontSize = isSmall ? 18.0 : 22.0;
+        
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _circleButton(
+              icon: Icons.arrow_back,
+              onTap: onBack,
             ),
-          ),
-        ),
-        const SizedBox(width: 48), // 왼쪽 버튼과 대칭을 위한 공간
-      ],
+            Expanded(
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '${summary.name.isEmpty ? '사용자' : summary.name}님의 사주 ✨',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.w700,
+                      shadows: const [
+                        Shadow(
+                          offset: Offset(0, 2),
+                          blurRadius: 6,
+                          color: Colors.black54,
+                        ),
+                      ],
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 48), // 왼쪽 버튼과 대칭을 위한 공간
+          ],
+        );
+      },
     );
   }
 
@@ -237,13 +261,24 @@ class SajuAnalysisView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            characterLabel.isEmpty ? '분류되지 않음' : characterLabel,
-            style: const TextStyle(
-              color: Color(0xFFFDE047),
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // 화면 크기에 따라 폰트 크기 조정
+              final isSmall = constraints.maxWidth < 300;
+              final titleSize = isSmall ? 24.0 : 32.0;
+              return FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  characterLabel.isEmpty ? '분류되지 않음' : characterLabel,
+                  style: TextStyle(
+                    color: const Color(0xFFFDE047),
+                    fontSize: titleSize,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 8),
           const Text(
@@ -263,7 +298,8 @@ class SajuAnalysisView extends StatelessWidget {
           _sectionTitle('기본 정보 📋'),
           const SizedBox(height: 12),
           _infoRow('이름', summary.name.isEmpty ? '미입력' : summary.name),
-          _infoRow('생년월일', summary.birthDate.isEmpty ? '미입력' : summary.birthDate),
+          _infoRow(
+              '생년월일', summary.birthDate.isEmpty ? '미입력' : summary.birthDate),
           _infoRow('성별', summary.gender.isEmpty ? '미입력' : summary.gender),
         ],
       ),
@@ -272,39 +308,51 @@ class SajuAnalysisView extends StatelessWidget {
 
   Widget _buildPillarsCard(Map<String, String> saju) {
     return _buildCard(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _sectionTitle('사주팔자 🔮'),
-          const SizedBox(height: 12),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 2.2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            children: [
-              _PillarTile(
-                label: '년주',
-                gan: saju['year_gan'],
-                ji: saju['year_ji'],
-              ),
-              _PillarTile(
-                label: '월주',
-                gan: saju['month_gan'],
-                ji: saju['month_ji'],
-              ),
-              _PillarTile(
-                label: '일주',
-                gan: saju['day_gan'],
-                ji: saju['day_ji'],
-              ),
-              _PillarTile(
-                label: '시주',
-                gan: saju['time_gan'],
-                ji: saju['time_ji'],
-              ),
-            ],
+          const SizedBox(height: 4),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // 화면 크기에 따라 childAspectRatio를 동적으로 조정
+              final cardWidth = constraints.maxWidth;
+              // 작은 화면에서는 더 작은 비율 사용
+              final aspectRatio = cardWidth < 300 ? 3.5 : 4.0;
+              return GridView.count(
+                crossAxisCount: 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                childAspectRatio: aspectRatio,
+                mainAxisSpacing: 3,
+                crossAxisSpacing: 3,
+                padding: EdgeInsets.zero,
+                children: [
+                  _PillarTile(
+                    label: '년주',
+                    gan: saju['year_gan'],
+                    ji: saju['year_ji'],
+                  ),
+                  _PillarTile(
+                    label: '월주',
+                    gan: saju['month_gan'],
+                    ji: saju['month_ji'],
+                  ),
+                  _PillarTile(
+                    label: '일주',
+                    gan: saju['day_gan'],
+                    ji: saju['day_ji'],
+                  ),
+                  _PillarTile(
+                    label: '시주',
+                    gan: saju['time_gan'],
+                    ji: saju['time_ji'],
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -393,7 +441,8 @@ class SajuAnalysisView extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.2)),
                     ),
                     child: Text(
                       flag,
@@ -416,9 +465,8 @@ class SajuAnalysisView extends StatelessWidget {
       final percent = (entry.value * 100).round();
       return '$label $percent%';
     }).toList();
-    final description = top.isEmpty
-        ? '분석 정보를 찾을 수 없습니다.'
-        : '${top.join(", ")} 특성이 두드러집니다.';
+    final description =
+        top.isEmpty ? '분석 정보를 찾을 수 없습니다.' : '${top.join(", ")} 특성이 두드러집니다.';
 
     return _buildCard(
       child: Column(
@@ -436,14 +484,24 @@ class SajuAnalysisView extends StatelessWidget {
   }
 
   Widget _sectionTitle(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        color: Color(0xFFFDE047), // yellow-300
-        fontSize: 20,
-        fontWeight: FontWeight.w700,
-      ),
-      textAlign: TextAlign.center,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 화면 크기에 따라 폰트 크기 조정
+        final isSmall = constraints.maxWidth < 300;
+        final fontSize = isSmall ? 16.0 : 20.0;
+        return FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            text,
+            style: TextStyle(
+              color: const Color(0xFFFDE047), // yellow-300
+              fontSize: fontSize,
+              fontWeight: FontWeight.w700,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        );
+      },
     );
   }
 
@@ -478,8 +536,8 @@ class SajuAnalysisView extends StatelessWidget {
 
   Map<String, String> _normalizedSaju() {
     final map = Map<String, String>.from(summary.saju);
-    final hasTime =
-        (map['time_gan']?.isNotEmpty ?? false) && (map['time_ji']?.isNotEmpty ?? false);
+    final hasTime = (map['time_gan']?.isNotEmpty ?? false) &&
+        (map['time_ji']?.isNotEmpty ?? false);
     if (!hasTime) {
       map.addAll(_fallbackTime(map));
     }
@@ -511,39 +569,57 @@ class _PillarTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFFA5F3FC),
-              fontSize: 12,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 화면 크기에 따라 폰트 크기 조정
+        final isSmall = constraints.maxWidth < 150;
+        final labelSize = isSmall ? 14.0 : 18.0;
+        final ganSize = isSmall ? 24.0 : 32.0;
+        final jiSize = isSmall ? 18.0 : 24.0;
+        
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: const Color(0xFFA5F3FC),
+                    fontSize: labelSize,
+                    height: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  gan ?? '-',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: ganSize,
+                    fontWeight: FontWeight.bold,
+                    height: 1.1,
+                  ),
+                ),
+                Text(
+                  ji ?? '-',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: jiSize,
+                    height: 1.1,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            gan ?? '-',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            ji ?? '-',
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -563,64 +639,80 @@ class _ElementTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.2),
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Text(emoji, style: const TextStyle(fontSize: 20)),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.grey.shade200,
-            fontSize: 12,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 화면 크기에 따라 아이콘 크기 조정
+        final iconSize = constraints.maxWidth < 200 ? 40.0 : 48.0;
+        final fontSize = constraints.maxWidth < 200 ? 10.0 : 12.0;
+        
+        return Column(
           children: [
-            Expanded(
-              child: Container(
-                height: 6,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(3),
+            Container(
+              width: iconSize,
+              height: iconSize,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(emoji, style: TextStyle(fontSize: iconSize * 0.4)),
                 ),
-                child: FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: value.clamp(0.0, 1.0),
+              ),
+            ),
+            const SizedBox(height: 6),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: Colors.grey.shade200,
+                  fontSize: fontSize,
+                ),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
                   child: Container(
+                    height: 6,
                     decoration: BoxDecoration(
-                      color: color,
+                      color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: value.clamp(0.0, 1.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 6),
-            SizedBox(
-              width: 40,
-              child: Text(
-                (value * 100).toStringAsFixed(0),
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
+                const SizedBox(width: 6),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      (value * 100).toStringAsFixed(0),
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: fontSize,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 }
@@ -632,14 +724,24 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        color: Color(0xFFFDE047), // yellow-300
-        fontSize: 20,
-        fontWeight: FontWeight.w700,
-      ),
-      textAlign: TextAlign.center,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 화면 크기에 따라 폰트 크기 조정
+        final isSmall = constraints.maxWidth < 300;
+        final fontSize = isSmall ? 16.0 : 20.0;
+        return FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            title,
+            style: TextStyle(
+              color: const Color(0xFFFDE047), // yellow-300
+              fontSize: fontSize,
+              fontWeight: FontWeight.w700,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        );
+      },
     );
   }
 }
@@ -713,4 +815,3 @@ class _ElementInfo {
   final Color color;
   final double value;
 }
-

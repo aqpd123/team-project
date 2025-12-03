@@ -21,7 +21,7 @@ def _secret_key() -> str:
     return secret
 
 
-def generate_jwt(payload: Dict[str, Any], expires_in: int = 3600) -> str:
+def generate_jwt(payload: Dict[str, Any], expires_in: int = 2592000) -> str:  # 기본 30일 (2592000초)
     now = int(time.time())
     claims = payload.copy()
     claims.setdefault("iat", now)

@@ -14,6 +14,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final apiClient = ApiClient();
   final auth = AuthController(apiClient);
+  // 토큰 만료 시 자동 로그아웃 처리
+  apiClient.onTokenExpired = () async {
+    await auth.logout();
+  };
   await auth.restoreSession();
   final community = CommunityController(apiClient, auth);
   final friend = FriendController(apiClient, auth);

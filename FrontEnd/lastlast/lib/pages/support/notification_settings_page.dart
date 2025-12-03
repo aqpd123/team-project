@@ -70,82 +70,88 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: MysticBackground(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+        padding: EdgeInsets.zero,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _circleButton(Icons.arrow_back, widget.onBack),
-                const SizedBox(width: 12),
+                Row(
+                  children: [
+                    _circleButton(Icons.arrow_back, widget.onBack),
+                    const SizedBox(width: 12),
+                    const Text(
+                      '알림 설정 🔔',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 const Text(
-                  '알림 설정 🔔',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
+                  '알림과 소리를 자유롭게 설정하세요',
+                  style: TextStyle(color: Color(0xFFA5F3FC)),
+                ),
+                const SizedBox(height: 24),
+                BlurCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '알림 종류',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _toggleTile(
+                        title: '푸시 알림',
+                        subtitle: '외부 푸시 알림 받기',
+                        value: _settings.pushNotifications,
+                        onChanged: () => _toggle('push'),
+                      ),
+                      const SizedBox(height: 12),
+                      _toggleTile(
+                        title: '앱 알림',
+                        subtitle: '앱 내 알림 받기',
+                        value: _settings.appNotifications,
+                        onChanged: () => _toggle('app'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                BlurCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '알림 방식',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _toggleTile(
+                        title: '소리',
+                        subtitle: '알림음 재생',
+                        value: _settings.soundEnabled,
+                        onChanged: () => _toggle('sound'),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            const Text(
-              '알림과 소리를 자유롭게 설정하세요',
-              style: TextStyle(color: Color(0xFFA5F3FC)),
-            ),
-            const SizedBox(height: 24),
-            BlurCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '알림 종류',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _toggleTile(
-                    title: '푸시 알림',
-                    subtitle: '외부 푸시 알림 받기',
-                    value: _settings.pushNotifications,
-                    onChanged: () => _toggle('push'),
-                  ),
-                  const SizedBox(height: 12),
-                  _toggleTile(
-                    title: '앱 알림',
-                    subtitle: '앱 내 알림 받기',
-                    value: _settings.appNotifications,
-                    onChanged: () => _toggle('app'),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            BlurCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '알림 방식',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _toggleTile(
-                    title: '소리',
-                    subtitle: '알림음 재생',
-                    value: _settings.soundEnabled,
-                    onChanged: () => _toggle('sound'),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

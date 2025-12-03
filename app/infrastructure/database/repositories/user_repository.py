@@ -70,5 +70,48 @@ class UserRepository:
             ).mappings().all()
             return [dict(row) for row in rows]
 
+    def update_saju_info(
+        self,
+        user_id: int,
+        character_type: str | None = None,
+        birth_date: str | None = None,
+        gender: int | None = None,
+        saju_data: str | None = None,
+    ) -> None:
+        """사용자의 사주 정보 업데이트"""
+        updates = []
+        params = {"user_id": user_id}
+        
+        if character_type is not None:
+            updates.append("character_type = :character_type")
+            params["character_type"] = character_type
+        
+        if birth_date is not None:
+            updates.append("birth_date = :birth_date")
+            params["birth_date"] = birth_date
+        
+        if gender is not None:
+            updates.append("gender = :gender")
+            params["gender"] = gender
+        
+        if saju_data is not None:
+            updates.append("saju_data = :saju_data")
+            params["saju_data"] = saju_data
+        
+        if not updates:
+            return  # 업데이트할 항목이 없으면 종료
+        
+        with self.database.session() as session:
+            session.execute(
+                text(
+                    f"""
+                    UPDATE users
+                    SET {', '.join(updates)}
+                    WHERE user_id = :user_id
+                    """
+                ),
+                params,
+            )
+
 
 user_repository = UserRepository()

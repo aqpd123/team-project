@@ -165,10 +165,27 @@ class AppRouter {
       ),
       GoRoute(
         path: '/my-saju',
-        builder: (context, state) => MySajuPage(
-          onBack: () => context.go('/home'),
-          onNavigateToSaju: () => context.go('/saju'),
-        ),
+        builder: (context, state) {
+          // 프로필 설정에서 왔는지 확인
+          final fromProfile = state.uri.queryParameters['from'] == 'profile';
+          final fromMore = state.uri.queryParameters['fromMore'] == 'true';
+          
+          return MySajuPage(
+            onBack: () {
+              if (fromProfile) {
+                // 더보기에서 왔으면 더보기로, 아니면 프로필로
+                if (fromMore) {
+                  context.go('/profile?from=more');
+                } else {
+                  context.go('/profile');
+                }
+              } else {
+                context.go('/home');
+              }
+            },
+            onNavigateToSaju: () => context.go('/saju'),
+          );
+        },
       ),
       GoRoute(
         path: '/more',
@@ -178,7 +195,7 @@ class AppRouter {
           userName: _auth.user?.name,
           userEmail: _auth.user?.email,
           onNavigateToLogin: () => context.go('/login'),
-          onNavigateToProfile: () => context.go('/profile'),
+          onNavigateToProfile: () => context.go('/profile?from=more'),
           onNavigateToNotification: () => context.go('/notification-settings'),
           onNavigateToHelp: () => context.go('/help'),
           onNavigateToTerms: () => context.go('/terms'),
@@ -338,32 +355,70 @@ class AppRouter {
       ),
       GoRoute(
         path: '/my-posts',
-        builder: (context, state) => MyPostsPage(
-          onBack: () => context.go('/profile'),
-          onWritePost: () => context.go('/write-post'),
-        ),
+        builder: (context, state) {
+          // 프로필 설정에서 왔는지 확인
+          final fromMore = state.uri.queryParameters['fromMore'] == 'true';
+          
+          return MyPostsPage(
+            onBack: () {
+              // 더보기에서 왔으면 더보기로, 아니면 프로필로
+              if (fromMore) {
+                context.go('/profile?from=more');
+              } else {
+                context.go('/profile');
+              }
+            },
+            onWritePost: () => context.go('/write-post'),
+          );
+        },
       ),
       GoRoute(
         path: '/profile',
-        builder: (context, state) => ProfilePage(
-          userName: _auth.user?.name ?? '사용자',
-          userEmail: _auth.user?.email ?? '',
-          onBack: () => context.go('/home'),
-          onNavigateToMySaju: () => context.go('/my-saju'),
-          onNavigateToMyPosts: () => context.go('/my-posts'),
-          onNavigateToAccountSettings: () => context.go('/account-settings'),
-        ),
+        builder: (context, state) {
+          // 더보기에서 왔는지 확인
+          final fromMore = state.uri.queryParameters['from'] == 'more';
+          
+          return ProfilePage(
+            userName: _auth.user?.name ?? '사용자',
+            userEmail: _auth.user?.email ?? '',
+            onBack: () {
+              // 더보기에서 왔으면 더보기로, 아니면 이전 경로로 또는 홈으로
+              if (fromMore) {
+                context.go('/more');
+              } else if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home');
+              }
+            },
+            onNavigateToMySaju: () => context.go('/my-saju?from=profile${fromMore ? '&fromMore=true' : ''}'),
+            onNavigateToMyPosts: () => context.go('/my-posts${fromMore ? '?fromMore=true' : ''}'),
+            onNavigateToAccountSettings: () => context.go('/account-settings${fromMore ? '?fromMore=true' : ''}'),
+          );
+        },
       ),
       GoRoute(
         path: '/account-settings',
-        builder: (context, state) => AccountSettingsPage(
-          onBack: () => context.go('/profile'),
-          onSave: (data) async {},
-          onLogout: () {
-            _auth.logout();
-            context.go('/login');
-          },
-        ),
+        builder: (context, state) {
+          // 프로필 설정에서 왔는지 확인
+          final fromMore = state.uri.queryParameters['fromMore'] == 'true';
+          
+          return AccountSettingsPage(
+            onBack: () {
+              // 더보기에서 왔으면 더보기로, 아니면 프로필로
+              if (fromMore) {
+                context.go('/profile?from=more');
+              } else {
+                context.go('/profile');
+              }
+            },
+            onSave: (data) async {},
+            onLogout: () {
+              _auth.logout();
+              context.go('/login');
+            },
+          );
+        },
       ),
       GoRoute(
         path: '/ohang/fire',
