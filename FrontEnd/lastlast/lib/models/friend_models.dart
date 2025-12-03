@@ -6,6 +6,7 @@ class FriendData {
     required this.elementLabel,
     required this.statusLabel,
     this.email,
+    this.characterType,
   });
 
   final int friendshipId;
@@ -14,6 +15,7 @@ class FriendData {
   final String elementLabel;
   final String statusLabel;
   final String? email;
+  final String? characterType; // 영어 오행 타입 ('wood', 'fire', etc.)
 }
 
 enum FriendRelationStatus { none, friend, incomingPending, outgoingPending }
@@ -53,5 +55,3 @@ class FriendSearchResult {
   final String elementLabel;
   final FriendRelationStatus status;
 }
-
-

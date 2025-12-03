@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controllers/auth_controller.dart' show AuthScope;
 import '../../controllers/saju_controller.dart';
@@ -35,10 +36,16 @@ class SajuCompatibilityPage extends StatefulWidget {
     super.key,
     this.onBack,
     this.friendData,
+    this.initialResult,
+    this.person1Name,
+    this.person2Name,
   });
 
   final VoidCallback? onBack;
   final FriendData? friendData;
+  final SajuCompatibilityResult? initialResult;
+  final String? person1Name;
+  final String? person2Name;
 
   @override
   State<SajuCompatibilityPage> createState() => _SajuCompatibilityPageState();
@@ -54,16 +61,26 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
   bool _showResult = false;
   bool _initialized = false;
   bool _isSubmitting = false;
+  bool _loadingFriendData = false;
   SajuCompatibilityResult? _result;
+  final ApiClient _api = ApiClient();
 
   @override
   void initState() {
     super.initState();
     _nameCtrl1 = TextEditingController();
     _nameCtrl2 = TextEditingController();
+
+    // 초기 결과가 있으면 바로 결과 화면 표시
+    if (widget.initialResult != null) {
+      _result = widget.initialResult;
+      _nameCtrl1.text = widget.person1Name ?? '나';
+      _nameCtrl2.text = widget.person2Name ?? '친구';
+      _showResult = true;
+    }
   }
 
-  void _initializeWithFriendData() {
+  Future<void> _initializeWithFriendData() async {
     if (_initialized || widget.friendData == null || !mounted) return;
     _initialized = true;
 
@@ -71,6 +88,102 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
     final auth = AuthScope.of(context);
     _nameCtrl1.text = auth.user?.name ?? '나';
     _nameCtrl2.text = widget.friendData!.name;
+
+    // API 클라이언트에 토큰 설정
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    if (token != null) {
+      _api.updateToken(token);
+    }
+
+    // 친구의 사주 데이터 가져오기
+    setState(() {
+      _loadingFriendData = true;
+    });
+
+    try {
+      final friendUserData =
+          await _api.get('/users/${widget.friendData!.userId}');
+
+      if (!mounted) return;
+
+      // 친구의 생년월일과 성별 정보 가져오기
+      DateTime? loadedBirthDate;
+      String? loadedGender;
+
+      // 디버깅: 받은 데이터 확인
+      print('🔍 친구 데이터 로드: ${friendUserData.keys}');
+      print('🔍 birth_date: ${friendUserData['birth_date']}');
+      print(
+          '🔍 gender: ${friendUserData['gender']} (타입: ${friendUserData['gender']?.runtimeType})');
+
+      if (friendUserData['birth_date'] != null) {
+        final birthDateStr = friendUserData['birth_date'] as String;
+        final parts = birthDateStr.split('-');
+        if (parts.length == 3) {
+          loadedBirthDate = DateTime(
+            int.parse(parts[0]),
+            int.parse(parts[1]),
+            int.parse(parts[2]),
+          );
+          print('✅ 생년월일 파싱 성공: $loadedBirthDate');
+        }
+      }
+
+      if (friendUserData['gender'] != null) {
+        final gender = friendUserData['gender'];
+        // gender가 int인지 확인
+        if (gender is int) {
+          loadedGender = gender == 1 ? '남성' : '여성';
+          print('✅ 성별 파싱 성공 (int): $gender -> $loadedGender');
+        } else if (gender is String) {
+          // 문자열로 온 경우도 처리
+          loadedGender =
+              gender == '1' || gender.toLowerCase() == 'male' ? '남성' : '여성';
+          print('✅ 성별 파싱 성공 (String): $gender -> $loadedGender');
+        } else {
+          print('⚠️ 성별 타입 인식 실패: ${gender.runtimeType}');
+        }
+      } else {
+        print('⚠️ 친구의 성별 정보가 없습니다.');
+      }
+
+      // setState 내에서 상태 업데이트
+      if (mounted) {
+        setState(() {
+          if (loadedBirthDate != null) {
+            _birthDate2 = loadedBirthDate;
+          }
+          if (loadedGender != null) {
+            _gender2 = loadedGender;
+            print('✅ 성별 상태 업데이트: $_gender2');
+          }
+          _loadingFriendData = false;
+        });
+      }
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadingFriendData = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('친구 정보를 불러오는 중 오류가 발생했습니다: ${e.message}'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadingFriendData = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('친구 정보를 불러오는 중 오류가 발생했습니다.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
   }
 
   @override
@@ -105,18 +218,42 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
   }
 
   Future<void> _handleSubmit() async {
-    if (_nameCtrl1.text.trim().isEmpty ||
-        _nameCtrl2.text.trim().isEmpty ||
-        _birthDate1 == null ||
-        _birthDate2 == null ||
-        _gender1 == null ||
-        _gender2 == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('두 사람의 정보를 모두 입력해 주세요.'),
-        ),
-      );
-      return;
+    // 친구 데이터가 있는 경우, 자신의 정보만 확인
+    if (widget.friendData != null) {
+      if (_nameCtrl1.text.trim().isEmpty ||
+          _birthDate1 == null ||
+          _gender1 == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('자신의 정보를 모두 입력해 주세요.'),
+          ),
+        );
+        return;
+      }
+      // 친구 정보가 없으면 에러
+      if (_birthDate2 == null || _gender2 == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('친구 정보를 불러오는 중입니다. 잠시만 기다려주세요.'),
+          ),
+        );
+        return;
+      }
+    } else {
+      // 일반 궁합보기: 두 사람의 정보 모두 확인
+      if (_nameCtrl1.text.trim().isEmpty ||
+          _nameCtrl2.text.trim().isEmpty ||
+          _birthDate1 == null ||
+          _birthDate2 == null ||
+          _gender1 == null ||
+          _gender2 == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('두 사람의 정보를 모두 입력해 주세요.'),
+          ),
+        );
+        return;
+      }
     }
     final controller = SajuScope.of(context);
     final request = SajuBirthCompatibilityRequest(
@@ -172,8 +309,30 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
 
   @override
   Widget build(BuildContext context) {
+    // extra에서 결과를 받은 경우 (사주 입력 페이지에서 온 경우)
+    final extra =
+        (context as Element).findAncestorStateOfType<NavigatorState>()?.context;
+    if (extra != null) {
+      final route = ModalRoute.of(context);
+      if (route != null && route.settings.arguments is Map) {
+        final args = route.settings.arguments as Map;
+        if (args['result'] is SajuCompatibilityResult && !_showResult) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              setState(() {
+                _result = args['result'] as SajuCompatibilityResult;
+                _nameCtrl1.text = args['person1Name'] as String? ?? '나';
+                _nameCtrl2.text = args['person2Name'] as String? ?? '친구';
+                _showResult = true;
+              });
+            }
+          });
+        }
+      }
+    }
+
     // 친구 정보가 전달된 경우 초기화(한 번만 실행)
-    if (widget.friendData != null && !_initialized && mounted) {
+    if (widget.friendData != null && !_initialized && mounted && !_showResult) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _initializeWithFriendData();
@@ -209,7 +368,7 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
                       child: Column(
                         children: [
                           _buildPersonCard(
-                            title: '첫 번째 사람',
+                            title: widget.friendData != null ? '나' : '첫 번째 사람',
                             accentColor: const Color(0xFFF472B6),
                             indexLabel: '1',
                             nameController: _nameCtrl1,
@@ -219,10 +378,13 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
                             onGenderChanged: (value) {
                               setState(() => _gender1 = value);
                             },
+                            enabled: true,
                           ),
                           const SizedBox(height: 20),
                           _buildPersonCard(
-                            title: '두 번째 사람',
+                            title: widget.friendData != null
+                                ? widget.friendData!.name
+                                : '두 번째 사람',
                             accentColor: const Color(0xFF8B5CF6),
                             indexLabel: '2',
                             nameController: _nameCtrl2,
@@ -232,6 +394,9 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
                             onGenderChanged: (value) {
                               setState(() => _gender2 = value);
                             },
+                            enabled: widget.friendData == null,
+                            isLoading:
+                                widget.friendData != null && _loadingFriendData,
                           ),
                           const SizedBox(height: 28),
                           SizedBox(
@@ -360,9 +525,11 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
         borderRadius: BorderRadius.circular(32),
         border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
-      child: const Text(
-        '두 분의 생년월일을 입력하시면 연애, 우정, 사업 궁합을 알려드려요',
-        style: TextStyle(color: Colors.white70, fontSize: 14),
+      child: Text(
+        widget.friendData != null
+            ? '${widget.friendData!.name}님과의 궁합을 확인해보세요. 자신의 생년월일만 입력하면 됩니다.'
+            : '두 분의 생년월일을 입력하시면 연애, 우정, 사업 궁합을 알려드려요',
+        style: const TextStyle(color: Colors.white70, fontSize: 14),
       ),
     );
   }
@@ -376,6 +543,8 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
     required VoidCallback onPickDate,
     required String? gender,
     required ValueChanged<String> onGenderChanged,
+    bool enabled = true,
+    bool isLoading = false,
   }) {
     return Container(
       width: double.infinity,
@@ -423,51 +592,91 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
           _buildInputContainer(
             child: TextField(
               controller: nameController,
-              style: const TextStyle(color: Colors.white),
+              enabled: enabled,
+              style: TextStyle(
+                color: enabled ? Colors.white : Colors.white54,
+              ),
               decoration: _inputDecoration('이름을 입력해주세요'),
             ),
           ),
           const SizedBox(height: 16),
           _buildLabel('생년월일'),
           _buildInputContainer(
-            child: GestureDetector(
-              onTap: onPickDate,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    birthDate == null ? '생년월일을 선택하세요' : _formatDate(birthDate),
-                    style: TextStyle(
-                      color: birthDate == null ? Colors.white54 : Colors.white,
+            child: isLoading
+                ? const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white54,
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        '친구 정보를 불러오는 중...',
+                        style: TextStyle(color: Colors.white54),
+                      ),
+                    ],
+                  )
+                : GestureDetector(
+                    onTap: enabled ? onPickDate : null,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          birthDate == null
+                              ? '생년월일을 선택하세요'
+                              : _formatDate(birthDate),
+                          style: TextStyle(
+                            color: birthDate == null
+                                ? Colors.white54
+                                : (enabled ? Colors.white : Colors.white70),
+                          ),
+                        ),
+                        Icon(
+                          Icons.calendar_today,
+                          color: enabled ? accentColor : Colors.white54,
+                          size: 18,
+                        ),
+                      ],
                     ),
                   ),
-                  Icon(Icons.calendar_today, color: accentColor, size: 18),
-                ],
-              ),
-            ),
           ),
           const SizedBox(height: 16),
           _buildLabel('성별'),
-          Row(
-            children: [
-              Expanded(
-                child: _genderButton(
-                  label: '남성',
-                  isSelected: gender == '남성',
-                  accentColor: accentColor,
-                  onTap: () => onGenderChanged('남성'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _genderButton(
-                  label: '여성',
-                  isSelected: gender == '여성',
-                  accentColor: accentColor,
-                  onTap: () => onGenderChanged('여성'),
-                ),
-              ),
-            ],
+          Builder(
+            builder: (context) {
+              // 디버깅: gender 값 확인
+              if (widget.friendData != null && indexLabel == '2') {
+                print('🔍 _buildPersonCard - 두 번째 사람 gender: $gender');
+              }
+              return Row(
+                children: [
+                  Expanded(
+                    child: _genderButton(
+                      label: '남성',
+                      isSelected: gender == '남성',
+                      accentColor: accentColor,
+                      enabled: enabled,
+                      onTap: enabled ? () => onGenderChanged('남성') : null,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _genderButton(
+                      label: '여성',
+                      isSelected: gender == '여성',
+                      accentColor: accentColor,
+                      enabled: enabled,
+                      onTap: enabled ? () => onGenderChanged('여성') : null,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -505,28 +714,48 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
     required String label,
     required bool isSelected,
     required Color accentColor,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
+    bool enabled = true,
   }) {
+    // enabled가 false여도 isSelected가 true이면 선택된 것처럼 표시
+    final effectiveSelected = isSelected;
+    final effectiveEnabled = enabled;
+
     return GestureDetector(
-      onTap: onTap,
+      onTap: effectiveEnabled ? onTap : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color:
-              isSelected ? accentColor : Colors.white.withValues(alpha: 0.08),
+          color: effectiveSelected
+              ? (effectiveEnabled
+                  ? accentColor
+                  : accentColor.withValues(alpha: 0.6)) // 비활성화되어도 선택된 색상 표시
+              : (effectiveEnabled
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.white.withValues(alpha: 0.05)),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color:
-                isSelected ? accentColor : Colors.white.withValues(alpha: 0.2),
+            color: effectiveSelected
+                ? (effectiveEnabled
+                    ? accentColor
+                    : accentColor.withValues(alpha: 0.6)) // 비활성화되어도 선택된 테두리 표시
+                : (effectiveEnabled
+                    ? Colors.white.withValues(alpha: 0.2)
+                    : Colors.white.withValues(alpha: 0.1)),
           ),
         ),
         child: Center(
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? Colors.white : Colors.white,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: effectiveEnabled
+                  ? Colors.white
+                  : (effectiveSelected
+                      ? Colors.white
+                      : Colors.white54), // 선택된 경우 비활성화되어도 흰색
+              fontWeight:
+                  effectiveSelected ? FontWeight.bold : FontWeight.normal,
             ),
           ),
         ),

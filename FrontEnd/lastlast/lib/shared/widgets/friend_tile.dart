@@ -6,6 +6,7 @@ class FriendTile extends StatelessWidget {
     required this.name,
     required this.elementLabel,
     required this.statusLabel,
+    this.characterType,
     this.onTap,
     this.trailing,
   });
@@ -13,13 +14,13 @@ class FriendTile extends StatelessWidget {
   final String name;
   final String elementLabel;
   final String statusLabel;
+  final String? characterType; // 영어 오행 타입 ('wood', 'fire', etc.)
   final VoidCallback? onTap;
   final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     final isOnline = statusLabel.contains('온라인');
-    final initial = name.isEmpty ? '?' : String.fromCharCode(name.runes.first).toUpperCase();
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -33,14 +34,7 @@ class FriendTile extends StatelessWidget {
           children: [
             Stack(
               children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: Colors.white.withValues(alpha: 0.12),
-                  child: Text(
-                    initial,
-                    style: const TextStyle(color: Colors.white, fontSize: 20),
-                  ),
-                ),
+                _buildAvatar(),
                 Positioned(
                   right: 0,
                   bottom: 0,
@@ -90,5 +84,53 @@ class FriendTile extends StatelessWidget {
       ),
     );
   }
-}
 
+  Widget _buildAvatar() {
+    // 오행에 따른 이미지 파일명 매핑
+    final characterImageMap = {
+      'wood': 'assets/tree.png',
+      'fire': 'assets/fire.png',
+      'earth': 'assets/land.png',
+      'metal': 'assets/gold.png',
+      'water': 'assets/water.png',
+    };
+
+    final imagePath = characterType != null
+        ? characterImageMap[characterType!.toLowerCase()]
+        : null;
+
+    return ClipOval(
+      child: imagePath != null
+          ? Image.asset(
+              imagePath,
+              width: 56,
+              height: 56,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return _buildFallbackAvatar();
+              },
+            )
+          : _buildFallbackAvatar(),
+    );
+  }
+
+  Widget _buildFallbackAvatar() {
+    final initial = name.isEmpty
+        ? '?'
+        : String.fromCharCode(name.runes.first).toUpperCase();
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          initial,
+          style: const TextStyle(color: Colors.white, fontSize: 20),
+        ),
+      ),
+    );
+  }
+}

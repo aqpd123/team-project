@@ -71,7 +71,8 @@ class FriendController extends ChangeNotifier {
     notifyListeners();
     try {
       final inboxFuture = _api.get('/friends/requests');
-      final outboxFuture = _api.get('/friends/requests', queryParameters: {'box': 'outbox'});
+      final outboxFuture =
+          _api.get('/friends/requests', queryParameters: {'box': 'outbox'});
       final results = await Future.wait([inboxFuture, outboxFuture]);
       _inbox = await _mapRequests(results[0], true);
       _outbox = await _mapRequests(results[1], false);
@@ -112,7 +113,8 @@ class FriendController extends ChangeNotifier {
 
   Future<List<FriendSearchResult>> searchUsers(String query) async {
     _ensureLoggedIn();
-    final response = await _api.get('/users', queryParameters: {'page_size': 100});
+    final response =
+        await _api.get('/users', queryParameters: {'page_size': 100});
     final items = response['items'] as List<dynamic>? ?? const [];
     final normalized = query.trim().toLowerCase();
     final results = <FriendSearchResult>[];
@@ -125,7 +127,8 @@ class FriendController extends ChangeNotifier {
       if (normalized.isNotEmpty) {
         final lowerName = name.toLowerCase();
         final lowerEmail = email.toLowerCase();
-        if (!lowerName.contains(normalized) && !lowerEmail.contains(normalized)) {
+        if (!lowerName.contains(normalized) &&
+            !lowerEmail.contains(normalized)) {
           continue;
         }
       }
@@ -168,7 +171,8 @@ class FriendController extends ChangeNotifier {
     final respondedAt = _parseDate(record['responded_at']);
     final createdAt = _parseDate(record['created_at']);
     final currentUserId = _auth.user?.id;
-    final otherUserId = currentUserId == requesterId ? addresseeId : requesterId;
+    final otherUserId =
+        currentUserId == requesterId ? addresseeId : requesterId;
     final profile = await _getProfile(otherUserId);
     final labelSource = respondedAt ?? createdAt;
     final statusLabel = labelSource != null
@@ -181,15 +185,18 @@ class FriendController extends ChangeNotifier {
       email: profile.email,
       elementLabel: profile.elementLabel,
       statusLabel: statusLabel,
+      characterType: profile.characterType,
     );
   }
 
-  Future<List<FriendRequestModel>> _mapRequests(Map<String, dynamic> response, bool inbox) async {
+  Future<List<FriendRequestModel>> _mapRequests(
+      Map<String, dynamic> response, bool inbox) async {
     final items = response['items'] as List<dynamic>? ?? const [];
     final result = <FriendRequestModel>[];
     for (final record in items.whereType<Map<String, dynamic>>()) {
       final friendshipId = record['friendship_id'] as int? ?? 0;
-      final targetId = record[inbox ? 'requester_id' : 'addressee_id'] as int? ?? 0;
+      final targetId =
+          record[inbox ? 'requester_id' : 'addressee_id'] as int? ?? 0;
       if (friendshipId == 0 || targetId == 0) continue;
       final profile = await _getProfile(targetId);
       result.add(
@@ -214,19 +221,39 @@ class FriendController extends ChangeNotifier {
         name: _auth.user!.name,
         email: _auth.user!.email,
         elementLabel: _auth.user!.elementLabel,
+        characterType: _auth.user!.characterType,
       );
     }
     final cached = _profileCache[userId];
     if (cached != null) return cached;
     final response = await _api.get('/users/$userId');
+    final characterTypeRaw = response['character_type'] as String?;
+    final characterTypeEn = _normalizeCharacterType(characterTypeRaw);
     final profile = _FriendProfile(
       userId: response['user_id'] as int? ?? userId,
       name: (response['username'] ?? response['email'] ?? '사용자') as String,
       email: (response['email'] ?? '') as String,
-      elementLabel: _elementFromCharacter(response['character_type']),
+      elementLabel: _elementFromCharacter(characterTypeRaw),
+      characterType: characterTypeEn?.toLowerCase(),
     );
     _profileCache[userId] = profile;
     return profile;
+  }
+
+  static String? _normalizeCharacterType(String? value) {
+    if (value == null) return null;
+    final lower = value.toLowerCase();
+    // 이미 영어 형식이면 그대로 반환
+    if (['wood', 'fire', 'earth', 'metal', 'water'].contains(lower)) {
+      return lower;
+    }
+    // 한글 형식이면 영어로 변환
+    if (lower.contains('화')) return 'fire';
+    if (lower.contains('수')) return 'water';
+    if (lower.contains('목')) return 'wood';
+    if (lower.contains('금')) return 'metal';
+    if (lower.contains('토')) return 'earth';
+    return null;
   }
 
   void _handleAuthChanged() {
@@ -298,12 +325,12 @@ class _FriendProfile {
     required this.name,
     required this.email,
     required this.elementLabel,
+    this.characterType,
   });
 
   final int userId;
   final String name;
   final String email;
   final String elementLabel;
+  final String? characterType; // 영어 오행 타입 ('wood', 'fire', etc.)
 }
-
-

@@ -122,18 +122,22 @@ class _FriendsPageState extends State<FriendsPage> {
                             hintStyle: const TextStyle(color: Colors.white54),
                             filled: true,
                             fillColor: Colors.white.withValues(alpha: 0.08),
-                            prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                            prefixIcon:
+                                const Icon(Icons.search, color: Colors.white54),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(20),
-                              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                              borderSide: BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.2)),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(20),
-                              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                              borderSide: BorderSide(
+                                  color: Colors.white.withValues(alpha: 0.2)),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(20),
-                              borderSide: const BorderSide(color: Color(0xFFA5F3FC)),
+                              borderSide:
+                                  const BorderSide(color: Color(0xFFA5F3FC)),
                             ),
                           ),
                           style: const TextStyle(color: Colors.white),
@@ -144,34 +148,44 @@ class _FriendsPageState extends State<FriendsPage> {
                         Expanded(
                           child: RefreshIndicator(
                             onRefresh: controller.refreshFriends,
-                            child: controller.isLoadingFriends && controller.friends.isEmpty
-                                ? const Center(child: CircularProgressIndicator())
+                            child: controller.isLoadingFriends &&
+                                    controller.friends.isEmpty
+                                ? const Center(
+                                    child: CircularProgressIndicator())
                                 : filtered.isEmpty
                                     ? const SingleChildScrollView(
-                                        physics: AlwaysScrollableScrollPhysics(),
+                                        physics:
+                                            AlwaysScrollableScrollPhysics(),
                                         child: SizedBox(
                                           height: 280,
                                           child: Center(
                                             child: Text(
                                               '등록된 친구가 없습니다.',
-                                              style: TextStyle(color: Colors.white54),
+                                              style: TextStyle(
+                                                  color: Colors.white54),
                                             ),
                                           ),
                                         ),
                                       )
                                     : ListView.separated(
-                                        physics: const AlwaysScrollableScrollPhysics(),
+                                        physics:
+                                            const AlwaysScrollableScrollPhysics(),
                                         itemCount: filtered.length,
-                                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                        separatorBuilder: (_, __) =>
+                                            const SizedBox(height: 12),
                                         itemBuilder: (context, index) {
                                           final friend = filtered[index];
                                           return FriendTile(
                                             name: friend.name,
                                             elementLabel: friend.elementLabel,
                                             statusLabel: friend.statusLabel,
-                                            onTap: () => setState(() => _selected = friend),
+                                            characterType: friend.characterType,
+                                            onTap: () => setState(
+                                                () => _selected = friend),
                                             trailing: IconButton(
-                                              onPressed: () => widget.onSendMessage?.call(friend),
+                                              onPressed: () => widget
+                                                  .onSendMessage
+                                                  ?.call(friend),
                                               icon: const Icon(
                                                 Icons.chat_bubble_outline,
                                                 color: Colors.white70,
@@ -231,10 +245,15 @@ class _FriendsPageState extends State<FriendsPage> {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF1E1B4B), Color(0xFF2E1065), Color(0xFF1E1B4B)],
+                colors: [
+                  Color(0xFF1E1B4B),
+                  Color(0xFF2E1065),
+                  Color(0xFF1E1B4B)
+                ],
               ),
               borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+              border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.3), width: 1.5),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.5),
@@ -252,7 +271,7 @@ class _FriendsPageState extends State<FriendsPage> {
                   children: [
                     Row(
                       children: [
-                        _avatar(friend.name),
+                        _avatar(friend.name, friend.characterType),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
@@ -271,14 +290,17 @@ class _FriendsPageState extends State<FriendsPage> {
                               ),
                               Text(
                                 friend.elementLabel,
-                                style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 12),
                                 overflow: TextOverflow.ellipsis,
                                 maxLines: 1,
                               ),
-                              if (friend.email != null && friend.email!.isNotEmpty)
+                              if (friend.email != null &&
+                                  friend.email!.isNotEmpty)
                                 Text(
                                   friend.email!,
-                                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                                  style: const TextStyle(
+                                      color: Colors.white54, fontSize: 11),
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
                                 ),
@@ -312,7 +334,9 @@ class _FriendsPageState extends State<FriendsPage> {
                       label: _removing ? '삭제 중...' : '친구 삭제',
                       icon: Icons.person_remove_alt_1_outlined,
                       color: const Color(0xFFFB7185),
-                      onTap: _removing ? null : () => _removeFriend(controller, friend),
+                      onTap: _removing
+                          ? null
+                          : () => _removeFriend(controller, friend),
                     ),
                     const SizedBox(height: 8),
                     Align(
@@ -335,7 +359,8 @@ class _FriendsPageState extends State<FriendsPage> {
     );
   }
 
-  Future<void> _removeFriend(FriendController controller, FriendData friend) async {
+  Future<void> _removeFriend(
+      FriendController controller, FriendData friend) async {
     setState(() => _removing = true);
     try {
       await controller.removeFriend(friend.friendshipId);
@@ -379,7 +404,8 @@ class _FriendsPageState extends State<FriendsPage> {
           backgroundColor: color,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 4,
           shadowColor: color.withValues(alpha: 0.4),
         ),
@@ -403,8 +429,41 @@ class _FriendsPageState extends State<FriendsPage> {
     );
   }
 
-  Widget _avatar(String name) {
-    final text = name.isEmpty ? '?' : String.fromCharCode(name.runes.first).toUpperCase();
+  Widget _avatar(String name, String? characterType) {
+    // 오행에 따른 이미지 파일명 매핑
+    final characterImageMap = {
+      'wood': 'assets/tree.png',
+      'fire': 'assets/fire.png',
+      'earth': 'assets/land.png',
+      'metal': 'assets/gold.png',
+      'water': 'assets/water.png',
+    };
+
+    final imagePath = characterType != null
+        ? characterImageMap[characterType.toLowerCase()]
+        : null;
+
+    if (imagePath != null) {
+      return ClipOval(
+        child: Image.asset(
+          imagePath,
+          width: 70,
+          height: 70,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildFallbackAvatar(name);
+          },
+        ),
+      );
+    }
+
+    return _buildFallbackAvatar(name);
+  }
+
+  Widget _buildFallbackAvatar(String name) {
+    final text = name.isEmpty
+        ? '?'
+        : String.fromCharCode(name.runes.first).toUpperCase();
     return Container(
       width: 70,
       height: 70,
@@ -413,7 +472,8 @@ class _FriendsPageState extends State<FriendsPage> {
         gradient: const LinearGradient(
           colors: [Color(0xFFFACC15), Color(0xFF22D3EE)],
         ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 3),
+        border:
+            Border.all(color: Colors.white.withValues(alpha: 0.5), width: 3),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFFFACC15).withValues(alpha: 0.4),
@@ -435,5 +495,3 @@ class _FriendsPageState extends State<FriendsPage> {
     );
   }
 }
-
-

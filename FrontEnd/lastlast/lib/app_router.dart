@@ -37,7 +37,6 @@ import 'pages/support/help_page.dart';
 import 'pages/support/notification_settings_page.dart';
 import 'pages/support/terms_page.dart';
 
-
 class AppRouter {
   AppRouter(this._auth);
 
@@ -87,8 +86,7 @@ class AppRouter {
       GoRoute(
         path: '/',
         builder: (context, state) => SplashPage(
-          onFinished: () =>
-              context.go(_auth.isLoggedIn ? '/home' : '/login'),
+          onFinished: () => context.go(_auth.isLoggedIn ? '/home' : '/login'),
         ),
       ),
       GoRoute(
@@ -123,21 +121,52 @@ class AppRouter {
       ),
       GoRoute(
         path: '/saju/input',
-        builder: (context, state) => SajuInputPage(
-          onBack: () => context.go('/saju'),
-        ),
-      ),
-      GoRoute(
-        path: '/saju/compatibility',
         builder: (context, state) {
           final extra = state.extra;
           FriendData? friendData;
           if (extra is Map<String, dynamic> && extra['friend'] is FriendData) {
             friendData = extra['friend'] as FriendData;
           }
-          return SajuCompatibilityPage(
-            onBack: () => friendData != null ? context.go('/friends') : context.go('/saju'),
+          return SajuInputPage(
+            onBack: () => friendData != null
+                ? context.go('/friends')
+                : context.go('/saju'),
             friendData: friendData,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/saju/compatibility',
+        builder: (context, state) {
+          final extra = state.extra;
+          FriendData? friendData;
+          SajuCompatibilityResult? result;
+          String? person1Name;
+          String? person2Name;
+
+          if (extra is Map<String, dynamic>) {
+            if (extra['friend'] is FriendData) {
+              friendData = extra['friend'] as FriendData;
+            }
+            if (extra['result'] is SajuCompatibilityResult) {
+              result = extra['result'] as SajuCompatibilityResult;
+            }
+            if (extra['person1Name'] is String) {
+              person1Name = extra['person1Name'] as String;
+            }
+            if (extra['person2Name'] is String) {
+              person2Name = extra['person2Name'] as String;
+            }
+          }
+
+          return SajuCompatibilityPage(
+            onBack: () => friendData != null
+                ? context.go('/friends')
+                : context.go('/saju'),
+            friendData: friendData,
+            initialResult: result,
+            person1Name: person1Name,
+            person2Name: person2Name,
           );
         },
       ),
@@ -171,11 +200,11 @@ class AppRouter {
           // 프로필 설정에서 왔는지 확인
           final fromProfile = state.uri.queryParameters['from'] == 'profile';
           final fromMore = state.uri.queryParameters['fromMore'] == 'true';
-          
+
           // extra에서 분석 결과 받기
           SajuAnalysisResult? initialResult;
           Map<String, String>? initialUserInfo;
-          
+
           if (state.extra is Map<String, dynamic>) {
             final extra = state.extra as Map<String, dynamic>;
             if (extra['result'] is SajuAnalysisResult) {
@@ -185,7 +214,7 @@ class AppRouter {
               initialUserInfo = extra['userInfo'] as Map<String, String>;
             }
           }
-          
+
           return MySajuPage(
             initialResult: initialResult,
             initialUserInfo: initialUserInfo,
@@ -210,7 +239,7 @@ class AppRouter {
         builder: (context, state) {
           // characterType을 직접 사용 (이미 영어 오행 타입)
           final characterType = _auth.user?.characterType;
-          
+
           return MorePage(
             isLoggedIn: _auth.isLoggedIn,
             currentPath: state.uri.path,
@@ -219,7 +248,8 @@ class AppRouter {
             characterType: characterType,
             onNavigateToLogin: () => context.go('/login'),
             onNavigateToProfile: () => context.go('/profile?from=more'),
-            onNavigateToNotification: () => context.go('/notification-settings'),
+            onNavigateToNotification: () =>
+                context.go('/notification-settings'),
             onNavigateToHelp: () => context.go('/help'),
             onNavigateToTerms: () => context.go('/terms'),
             onNavigateToFeedback: () => context.go('/feedback'),
@@ -275,7 +305,8 @@ class AppRouter {
           final tab = state.uri.queryParameters['tab'];
           return BoardPage(
             isLoggedIn: _auth.isLoggedIn,
-            initialTab: tab == 'ohang' ? BoardCategory.ohang : BoardCategory.anonymous,
+            initialTab:
+                tab == 'ohang' ? BoardCategory.ohang : BoardCategory.anonymous,
             onNavigateToLogin: () => context.go('/login'),
             onNavigateToWritePost: () => context.go('/write-post'),
             onNavigateToMessages: () => context.go('/messages'),
@@ -297,7 +328,7 @@ class AppRouter {
           final fromParam = state.uri.queryParameters['from'];
           final fromMyPosts = fromParam == 'my-posts';
           final fromMore = state.uri.queryParameters['fromMore'] == 'true';
-          
+
           if (postId == null) {
             return BoardPage(
               isLoggedIn: _auth.isLoggedIn,
@@ -313,11 +344,12 @@ class AppRouter {
               onOpenPost: (id) => context.go('/posts/$id'),
             );
           }
-          
+
           // 뒤로가기 경로 결정
           void Function()? onBackCallback;
           if (fromMyPosts) {
-            onBackCallback = () => context.go('/my-posts${fromMore ? '?fromMore=true' : ''}');
+            onBackCallback = () =>
+                context.go('/my-posts${fromMore ? '?fromMore=true' : ''}');
           } else if (fromParam == 'ohang-fire') {
             onBackCallback = () => context.go('/ohang/fire');
           } else if (fromParam == 'ohang-water') {
@@ -331,7 +363,7 @@ class AppRouter {
           } else {
             onBackCallback = () => context.go('/board');
           }
-          
+
           return PostDetailPage(
             postId: postId,
             onBack: onBackCallback,
@@ -365,7 +397,7 @@ class AppRouter {
             extra: {'name': friend.name, 'id': friend.userId},
           ),
           onCheckCompatibility: (friend) => context.go(
-            '/saju/compatibility',
+            '/saju/input',
             extra: {'friend': friend},
           ),
         ),
@@ -376,7 +408,8 @@ class AppRouter {
           final extra = state.extra;
           if (extra is Map<String, dynamic>) {
             final rawId = extra['id'];
-            final peerId = rawId is int ? rawId : int.tryParse(rawId?.toString() ?? '');
+            final peerId =
+                rawId is int ? rawId : int.tryParse(rawId?.toString() ?? '');
             if (peerId != null) {
               return SendMessagePage(
                 recipientName: (extra['name'] ?? '친구') as String,
@@ -409,7 +442,7 @@ class AppRouter {
         builder: (context, state) {
           // 프로필 설정에서 왔는지 확인
           final fromMore = state.uri.queryParameters['fromMore'] == 'true';
-          
+
           return MyPostsPage(
             fromMore: fromMore,
             onBack: () {
@@ -429,10 +462,10 @@ class AppRouter {
         builder: (context, state) {
           // 더보기에서 왔는지 확인
           final fromMore = state.uri.queryParameters['from'] == 'more';
-          
+
           // characterType을 직접 사용 (이미 영어 오행 타입)
           final characterType = _auth.user?.characterType;
-          
+
           return ProfilePage(
             userName: _auth.user?.name ?? '사용자',
             userEmail: _auth.user?.email ?? '',
@@ -447,8 +480,10 @@ class AppRouter {
                 context.go('/home');
               }
             },
-            onNavigateToMyPosts: () => context.go('/my-posts${fromMore ? '?fromMore=true' : ''}'),
-            onNavigateToAccountSettings: () => context.go('/account-settings${fromMore ? '?fromMore=true' : ''}'),
+            onNavigateToMyPosts: () =>
+                context.go('/my-posts${fromMore ? '?fromMore=true' : ''}'),
+            onNavigateToAccountSettings: () => context
+                .go('/account-settings${fromMore ? '?fromMore=true' : ''}'),
           );
         },
       ),
@@ -457,7 +492,7 @@ class AppRouter {
         builder: (context, state) {
           // 프로필 설정에서 왔는지 확인
           final fromMore = state.uri.queryParameters['fromMore'] == 'true';
-          
+
           return AccountSettingsPage(
             onBack: () {
               // 더보기에서 왔으면 더보기로, 아니면 프로필로
@@ -528,4 +563,3 @@ class AppRouter {
     ],
   );
 }
-
