@@ -43,40 +43,39 @@ const _elements = [
   ElementFilter(
     name: '화 (火)',
     circleColor: Color(0xFFF87171),
-    gradient: [Color(0xFFEF4444), Color(0xFFF97316)],
+    gradient: [Color(0xFFF87171), Color(0xFFF97316)],
     icon: Icons.local_fire_department_outlined,
     description: '불의 기운 · 뜨거운 열정',
   ),
   ElementFilter(
     name: '수 (水)',
     circleColor: Color(0xFF38BDF8),
-    gradient: [Color(0xFF0EA5E9), Color(0xFF22D3EE)],
+    gradient: [Color(0xFF38BDF8), Color(0xFF22D3EE)],
     icon: Icons.water_drop_outlined,
     description: '물의 기운 · 유연한 흐름',
   ),
   ElementFilter(
     name: '목 (木)',
     circleColor: Color(0xFF34D399),
-    gradient: [Color(0xFF10B981), Color(0xFF059669)],
+    gradient: [Color(0xFF34D399), Color(0xFF10B981)],
     icon: Icons.eco_outlined,
     description: '나무의 기운 · 성장과 발전',
   ),
   ElementFilter(
     name: '금 (金)',
-    circleColor: Color(0xFF94A3B8),
-    gradient: [Color(0xFF9CA3AF), Color(0xFF475569)],
+    circleColor: Color(0xFFFBBF24),
+    gradient: [Color(0xFFFBBF24), Color(0xFFF59E0B)],
     icon: Icons.hexagon_outlined,
     description: '금속의 기운 · 강인한 의지',
   ),
   ElementFilter(
     name: '토 (土)',
-    circleColor: Color(0xFFFACC15),
-    gradient: [Color(0xFFFBBF24), Color(0xFFF59E0B)],
+    circleColor: Color(0xFFD97706),
+    gradient: [Color(0xFFD97706), Color(0xFFB45309)],
     icon: Icons.landscape_outlined,
     description: '땅의 기운 · 안정과 신뢰',
   ),
 ];
-
 
 /// React `celebrity-saju/page.tsx`의 Flutter 버전.
 /// element 선택 → 유명인 목록 → 외부 콜백으로 결과 화면 이동 흐름을 복제했다.
@@ -259,9 +258,11 @@ class _CelebritySajuPageState extends State<CelebritySajuPage> {
         final index = entry.key;
         final element = entry.value;
         return Padding(
-          padding: EdgeInsets.only(bottom: index < _elements.length - 1 ? 10 : 0),
+          padding:
+              EdgeInsets.only(bottom: index < _elements.length - 1 ? 10 : 0),
           child: GestureDetector(
-            onTap: () => setState(() => _selectedElement = element.name.split(' ')[0]),
+            onTap: () =>
+                setState(() => _selectedElement = element.name.split(' ')[0]),
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -399,56 +400,61 @@ class _CelebritySajuPageState extends State<CelebritySajuPage> {
     }
 
     return ListView.separated(
-      itemCount: items.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-      final celeb = items[index];
-      return GestureDetector(
-        onTap: () => widget.onCelebritySelected?.call(celeb),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          decoration: _cardDecoration(),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundImage: NetworkImage(celeb.imageUrl),
-                backgroundColor: Colors.white.withValues(alpha: 0.1),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      celeb.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
+        itemCount: items.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          final celeb = items[index];
+          return GestureDetector(
+            onTap: () => widget.onCelebritySelected?.call(celeb),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              decoration: _cardDecoration(),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundImage: celeb.imageUrl.startsWith('assets/')
+                        ? AssetImage(celeb.imageUrl) as ImageProvider
+                        : NetworkImage(celeb.imageUrl),
+                    backgroundColor: Colors.white.withValues(alpha: 0.1),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          celeb.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          celeb.profession,
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 14),
+                        ),
+                        if (celeb.birthDate.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            celeb.birthDate,
+                            style: const TextStyle(
+                                color: Colors.white54, fontSize: 12),
+                          ),
+                        ],
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      celeb.profession,
-                      style: const TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
-                    if (celeb.birthDate.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        celeb.birthDate,
-                        style: const TextStyle(color: Colors.white54, fontSize: 12),
-                      ),
-                    ],
-                  ],
-                ),
+                  ),
+                  const Icon(Icons.arrow_forward_ios_rounded,
+                      color: Colors.white70),
+                ],
               ),
-              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70),
-            ],
-          ),
-        ),
-      );
-    });
+            ),
+          );
+        });
   }
 
   BoxDecoration _cardDecoration() {
@@ -466,4 +472,3 @@ class _CelebritySajuPageState extends State<CelebritySajuPage> {
     );
   }
 }
-

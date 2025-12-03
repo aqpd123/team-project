@@ -244,6 +244,8 @@ class _BoardPageState extends State<BoardPage> {
                                               comments: post.commentCount,
                                               onTap: () =>
                                                   widget.onOpenPost?.call(post.id),
+                                              authorCharacterType: post.authorCharacterType,
+                                              showAvatar: post.category == BoardCategory.ohang, // 오행 게시판인 경우만 프로필 사진 표시
                                             );
                                           }
                                           // 마지막 아이템: 최소 높이를 위한 여백

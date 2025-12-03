@@ -11,6 +11,7 @@ class AuthUser {
     required this.name,
     required this.email,
     this.elementLabel = '화의 사람',
+    this.characterType,
     this.saju,
   });
 
@@ -18,9 +19,13 @@ class AuthUser {
   final String name;
   final String email;
   final String elementLabel;
+  final String? characterType; // 원본 영어 오행 타입 ('wood', 'fire', etc.)
   final Map<String, dynamic>? saju;
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
+    final rawCharacterType = json['character_type'] as String?;
+    // 한글 형식("화의 사람")이면 영어로 변환, 영어 형식이면 그대로 사용
+    final characterTypeEn = _normalizeCharacterType(rawCharacterType);
     return AuthUser(
       id: json['user_id'] as int? ?? json['id'] as int? ?? 0,
       name: (json['username'] ??
@@ -28,16 +33,33 @@ class AuthUser {
               json['email'] ??
               '사용자') as String,
       email: json['email'] as String? ?? '',
-      elementLabel: _elementFromCharacter(json['character_type']),
+      elementLabel: _elementFromCharacter(characterTypeEn),
+      characterType: characterTypeEn?.toLowerCase(), // 영어 오행 타입 저장
       saju: json['saju'] as Map<String, dynamic>?,
     );
+  }
+  
+  static String? _normalizeCharacterType(String? value) {
+    if (value == null) return null;
+    final lower = value.toLowerCase();
+    // 이미 영어 형식이면 그대로 반환
+    if (['wood', 'fire', 'earth', 'metal', 'water'].contains(lower)) {
+      return lower;
+    }
+    // 한글 형식이면 영어로 변환
+    if (lower.contains('화')) return 'fire';
+    if (lower.contains('수')) return 'water';
+    if (lower.contains('목')) return 'wood';
+    if (lower.contains('금')) return 'metal';
+    if (lower.contains('토')) return 'earth';
+    return null;
   }
 
   Map<String, dynamic> toJson() => {
         'user_id': id,
         'username': name,
         'email': email,
-        'character_type': elementLabel,
+        'character_type': characterType, // 영어 오행 타입 직접 저장
         if (saju != null) 'saju': saju,
       };
 
@@ -192,6 +214,25 @@ class AuthController extends ChangeNotifier {
       },
     );
     return login(email, password);
+  }
+
+  Future<void> refreshUser() async {
+    if (_user == null) return;
+    
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(_tokenKey);
+      if (token == null) return;
+      
+      final response = await _api.get('/users/${_user!.id}');
+      final updatedUser = AuthUser.fromJson(response);
+      _user = updatedUser;
+      await _persistSession(token, updatedUser);
+      notifyListeners();
+    } catch (e) {
+      // 사용자 정보 새로고침 실패 시 무시 (기존 정보 유지)
+      print('⚠️ 사용자 정보 새로고침 실패: $e');
+    }
   }
 
   Future<void> logout() async {

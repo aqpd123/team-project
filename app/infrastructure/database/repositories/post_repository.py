@@ -34,12 +34,13 @@ class PostRepository:
                     """
                     SELECT p.*, 
                            u.username as author_name,
+                           u.character_type as author_character_type,
                            COALESCE(COUNT(DISTINCT c.comment_id), 0) as comment_count
                     FROM posts p
                     LEFT JOIN users u ON p.author_id = u.user_id
                     LEFT JOIN comments c ON p.post_id = c.post_id
                     WHERE p.post_id = :post_id
-                    GROUP BY p.post_id, u.username
+                    GROUP BY p.post_id, u.username, u.character_type
                     """
                 ),
                 {"post_id": post_id},
@@ -54,11 +55,12 @@ class PostRepository:
                     """
                     SELECT p.*, 
                            u.username as author_name,
+                           u.character_type as author_character_type,
                            COALESCE(COUNT(DISTINCT c.comment_id), 0) as comment_count
                     FROM posts p
                     LEFT JOIN users u ON p.author_id = u.user_id
                     LEFT JOIN comments c ON p.post_id = c.post_id
-                    GROUP BY p.post_id, u.username
+                    GROUP BY p.post_id, u.username, u.character_type
                     ORDER BY p.created_at DESC
                     LIMIT :limit OFFSET :offset
                     """
@@ -160,12 +162,13 @@ class PostRepository:
                     """
                     SELECT p.*, 
                            u.username as author_name,
+                           u.character_type as author_character_type,
                            COALESCE(COUNT(DISTINCT c.comment_id), 0) as comment_count
                     FROM posts p
                     LEFT JOIN users u ON p.author_id = u.user_id
                     LEFT JOIN comments c ON p.post_id = c.post_id
                     WHERE p.author_id = :author_id
-                    GROUP BY p.post_id, u.username
+                    GROUP BY p.post_id, u.username, u.character_type
                     ORDER BY p.created_at DESC
                     LIMIT :limit OFFSET :offset
                     """

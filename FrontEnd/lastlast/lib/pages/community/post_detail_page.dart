@@ -283,29 +283,61 @@ class _PostDetailPageState extends State<PostDetailPage> {
           const SizedBox(height: 8),
           Row(
             children: [
-              // 오행 게시판에서만 작성자 닉네임 클릭 가능
-              post.category == BoardCategory.ohang && post.authorName != null && post.authorName!.isNotEmpty
-                  ? GestureDetector(
-                      onTap: () {
-                        final currentUserId = auth.user?.id;
-                        // 본인 게시글은 모달 표시 안 함
-                        if (currentUserId != null && post.authorId != currentUserId) {
-                          setState(() => _showAuthorModal = true);
-                        }
-                      },
-                      child: Text(
+              // 오행 게시판인 경우 프로필 사진과 닉네임 함께 표시
+              if (post.category == BoardCategory.ohang && post.authorCharacterType != null) ...[
+                _buildAuthorAvatar(post.authorCharacterType!),
+                const SizedBox(width: 8),
+                post.authorName != null && post.authorName!.isNotEmpty
+                    ? GestureDetector(
+                        onTap: () {
+                          final currentUserId = auth.user?.id;
+                          // 본인 게시글은 모달 표시 안 함
+                          if (currentUserId != null && post.authorId != currentUserId) {
+                            setState(() => _showAuthorModal = true);
+                          }
+                        },
+                        child: Text(
+                          post.authorLabel,
+                          style: const TextStyle(
+                            color: Color(0xFFA5F3FC),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      )
+                    : Text(
                         post.authorLabel,
                         style: const TextStyle(
                           color: Color(0xFFA5F3FC),
-                          decoration: TextDecoration.underline,
-                          decorationColor: Color(0xFFA5F3FC),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    )
-                  : Text(
-                      post.authorLabel,
-                      style: const TextStyle(color: Color(0xFFA5F3FC)),
-                    ),
+              ] else ...[
+                // 익명 게시판인 경우 기존대로 텍스트만 표시
+                post.category == BoardCategory.ohang && post.authorName != null && post.authorName!.isNotEmpty
+                    ? GestureDetector(
+                        onTap: () {
+                          final currentUserId = auth.user?.id;
+                          // 본인 게시글은 모달 표시 안 함
+                          if (currentUserId != null && post.authorId != currentUserId) {
+                            setState(() => _showAuthorModal = true);
+                          }
+                        },
+                        child: Text(
+                          post.authorLabel,
+                          style: const TextStyle(
+                            color: Color(0xFFA5F3FC),
+                            decoration: TextDecoration.underline,
+                            decorationColor: Color(0xFFA5F3FC),
+                          ),
+                        ),
+                      )
+                    : Text(
+                        post.authorLabel,
+                        style: const TextStyle(color: Color(0xFFA5F3FC)),
+                      ),
+              ],
               const SizedBox(width: 12),
               Text(
                 post.dateLabel,
@@ -586,7 +618,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 children: [
                   Row(
                     children: [
-                      _avatar(authorName),
+                      // 오행 캐릭터 타입이 있으면 캐릭터 이미지, 없으면 기본 아바타
+                      post.authorCharacterType != null
+                          ? _buildAuthorAvatarModal(post.authorCharacterType!)
+                          : _avatar(authorName),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
@@ -642,6 +677,117 @@ class _PostDetailPageState extends State<PostDetailPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAuthorAvatar(String characterType) {
+    // 오행에 따른 이미지 파일명 매핑
+    final characterImageMap = {
+      'wood': 'assets/tree.png',
+      'fire': 'assets/fire.png',
+      'earth': 'assets/land.png',
+      'metal': 'assets/gold.png',
+      'water': 'assets/water.png',
+    };
+    
+    final imagePath = characterImageMap[characterType.toLowerCase()];
+    
+    return ClipOval(
+      child: imagePath != null
+          ? Image.asset(
+              imagePath,
+              width: 32,
+              height: 32,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 32,
+                  height: 32,
+                  color: Colors.white.withValues(alpha: 0.1),
+                  child: const Icon(
+                    Icons.person_outline,
+                    color: Colors.white70,
+                    size: 20,
+                  ),
+                );
+              },
+            )
+          : Container(
+              width: 32,
+              height: 32,
+              color: Colors.white.withValues(alpha: 0.1),
+              child: const Icon(
+                Icons.person_outline,
+                color: Colors.white70,
+                size: 20,
+              ),
+            ),
+    );
+  }
+
+  Widget _buildAuthorAvatarModal(String characterType) {
+    // 오행에 따른 이미지 파일명 매핑
+    final characterImageMap = {
+      'wood': 'assets/tree.png',
+      'fire': 'assets/fire.png',
+      'earth': 'assets/land.png',
+      'metal': 'assets/gold.png',
+      'water': 'assets/water.png',
+    };
+    
+    final imagePath = characterImageMap[characterType.toLowerCase()];
+    
+    return Container(
+      width: 70,
+      height: 70,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 20,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: imagePath != null
+            ? Image.asset(
+                imagePath,
+                width: 70,
+                height: 70,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFFACC15), Color(0xFF22D3EE)],
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.person_outline,
+                      color: Colors.white,
+                      size: 36,
+                    ),
+                  );
+                },
+              )
+            : Container(
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFFACC15), Color(0xFF22D3EE)],
+                  ),
+                ),
+                child: const Icon(
+                  Icons.person_outline,
+                  color: Colors.white,
+                  size: 36,
+                ),
+              ),
       ),
     );
   }

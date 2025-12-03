@@ -44,38 +44,40 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
 
   Future<void> _loadCompatibility() async {
     if (!mounted) return;
-    
+
     try {
       final auth = AuthScope.of(context);
       final celebrityController = CelebrityScope.of(context);
-      
+
       // 사용자 사주 데이터 가져오기 - SharedPreferences에서 마지막 사주 분석 결과 가져오기
       Map<String, String>? userSaju;
       int userGender = 0;
-      
+
       // 현재 로그인한 사용자 ID 가져오기
       final currentUserId = auth.user?.id ?? 0;
-      
+
       // SharedPreferences에서 마지막 사주 분석 결과 가져오기 (항상 사용자별 키 사용)
       final prefs = await SharedPreferences.getInstance();
       final lastSajuKey = 'last_saju_analysis_$currentUserId';
       final lastSajuJson = prefs.getString(lastSajuKey);
-      
+
       if (lastSajuJson != null) {
         try {
           final sajuData = jsonDecode(lastSajuJson) as Map<String, dynamic>;
-          userSaju = sajuData.map((key, value) => MapEntry(key, value.toString()));
+          userSaju =
+              sajuData.map((key, value) => MapEntry(key, value.toString()));
         } catch (e) {
           // JSON 파싱 실패 시 무시
         }
       }
-      
+
       // AuthUser에서도 시도
       if ((userSaju == null || userSaju.isEmpty) && auth.user?.saju != null) {
         final sajuData = auth.user!.saju!;
-        userSaju = sajuData.map((key, value) => MapEntry(key, value.toString()));
+        userSaju =
+            sajuData.map((key, value) => MapEntry(key, value.toString()));
       }
-      
+
       // 사용자 사주 데이터가 없으면 에러 표시
       if (userSaju == null || userSaju.isEmpty) {
         if (mounted) {
@@ -228,7 +230,7 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
         // 화면 크기에 따라 폰트 크기 조정
         final isSmall = constraints.maxWidth < 350;
         final fontSize = isSmall ? 18.0 : 22.0;
-        
+
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -264,7 +266,7 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
         final nameFontSize = isSmall ? 16.0 : 20.0;
         final professionFontSize = isSmall ? 12.0 : 14.0;
         final dateFontSize = isSmall ? 10.0 : 12.0;
-        
+
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.all(24),
@@ -277,7 +279,9 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
             children: [
               CircleAvatar(
                 radius: avatarRadius,
-                backgroundImage: NetworkImage(widget.celebrity.imageUrl),
+                backgroundImage: widget.celebrity.imageUrl.startsWith('assets/')
+                    ? AssetImage(widget.celebrity.imageUrl) as ImageProvider
+                    : NetworkImage(widget.celebrity.imageUrl),
                 backgroundColor: Colors.white.withValues(alpha: 0.1),
               ),
               const SizedBox(width: 16),
@@ -323,11 +327,13 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.2)),
                 ),
                 child: Text(
                   widget.celebrity.element,
@@ -403,7 +409,7 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
 
     final scores = _compatibilityResult?['scores'] as Map<String, dynamic>?;
     final finalScore = (scores?['final'] as num?)?.toDouble() ?? 0.0;
-    final description = _compatibilityResult?['description'] as String? ?? 
+    final description = _compatibilityResult?['description'] as String? ??
         '${widget.celebrity.name}님과의 궁합이에요!';
 
     return Container(
@@ -420,7 +426,7 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
           final circleSize = isSmall ? 80.0 : 100.0;
           final scoreFontSize = isSmall ? 28.0 : 36.0;
           final descFontSize = isSmall ? 16.0 : 18.0;
-          
+
           return Column(
             children: [
               Container(
@@ -574,4 +580,3 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
     );
   }
 }
-

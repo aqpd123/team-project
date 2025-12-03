@@ -128,6 +128,8 @@ class _OhangDetailPageState extends State<OhangDetailPage> {
                                         likes: post.likeCount,
                                         comments: post.commentCount,
                                         onTap: () => widget.onOpenPost?.call(post.id),
+                                        authorCharacterType: post.authorCharacterType,
+                                        showAvatar: true, // 오행 게시판에서는 프로필 사진 표시
                                       );
                                     },
                                   ),

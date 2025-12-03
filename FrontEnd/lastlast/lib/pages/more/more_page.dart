@@ -12,6 +12,7 @@ class MorePage extends StatelessWidget {
     this.currentPath = '/more',
     this.userName,
     this.userEmail,
+    this.characterType,
     this.onNavigateToLogin,
     this.onNavigateToProfile,
     this.onNavigateToNotification,
@@ -25,6 +26,7 @@ class MorePage extends StatelessWidget {
   final String currentPath;
   final String? userName;
   final String? userEmail;
+  final String? characterType; // 'wood', 'fire', 'earth', 'metal', 'water'
   final VoidCallback? onNavigateToLogin;
   final VoidCallback? onNavigateToProfile;
   final VoidCallback? onNavigateToNotification;
@@ -118,19 +120,7 @@ class MorePage extends StatelessWidget {
                 BlurCard(
                   child: Row(
                     children: [
-                      Container(
-                        width: 68,
-                        height: 68,
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Color(0xFFFACC15), Color(0xFFF97316)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.person, color: Colors.white),
-                      ),
+                      _buildAvatar(),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
@@ -214,6 +204,62 @@ class MorePage extends StatelessWidget {
       ),
       bottomNavigationBar:
           AppBottomNavigationBar(currentPath: currentPath),
+    );
+  }
+
+  Widget _buildAvatar() {
+    // 오행에 따른 이미지 파일명 매핑
+    final characterImageMap = {
+      'wood': 'assets/tree.png',
+      'fire': 'assets/fire.png',
+      'earth': 'assets/land.png',
+      'metal': 'assets/gold.png',
+      'water': 'assets/water.png',
+    };
+    
+    final characterImagePath = characterType != null 
+        ? characterImageMap[characterType] 
+        : null;
+    
+    return Container(
+      width: 68,
+      height: 68,
+      decoration: BoxDecoration(
+        gradient: characterImagePath == null
+            ? const LinearGradient(
+                colors: [Color(0xFFFACC15), Color(0xFFF97316)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null,
+        shape: BoxShape.circle,
+        color: characterImagePath != null
+            ? Colors.transparent
+            : null,
+      ),
+      child: characterImagePath != null
+          ? ClipOval(
+              child: Image.asset(
+                characterImagePath,
+                width: 68,
+                height: 68,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFFACC15), Color(0xFFF97316)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.person, color: Colors.white),
+                  );
+                },
+              ),
+            )
+          : const Icon(Icons.person, color: Colors.white),
     );
   }
 }

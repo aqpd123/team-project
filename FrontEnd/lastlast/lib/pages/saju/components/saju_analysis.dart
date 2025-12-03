@@ -5,8 +5,8 @@ import '../../../models/saju_models.dart';
 const _elementDisplay = [
   ('wood', '목', '🌳', Color(0xFF34D399)),
   ('fire', '화', '🔥', Color(0xFFF87171)),
-  ('earth', '토', '🏔️', Color(0xFFFCD34D)),
-  ('metal', '금', '⚡', Color(0xFFE5E7EB)),
+  ('earth', '토', '🏔️', Color(0xFFD97706)),
+  ('metal', '금', '⚡', Color(0xFFFBBF24)),
   ('water', '수', '💧', Color(0xFF38BDF8)),
 ];
 
@@ -218,6 +218,17 @@ class SajuAnalysisView extends StatelessWidget {
   }
 
   Widget _buildCharacterCard(String characterLabel) {
+    // 오행에 따른 이미지 파일명 매핑
+    final characterImageMap = {
+      'wood': 'assets/tree.png',
+      'fire': 'assets/fire.png',
+      'earth': 'assets/land.png',
+      'metal': 'assets/gold.png',
+      'water': 'assets/water.png',
+    };
+    
+    final imagePath = characterImageMap[result.character];
+    
     return _buildCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,7 +241,44 @@ class SajuAnalysisView extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
+          if (imagePath != null)
+            Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 15,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(22),
+                    child: Image.asset(
+                      imagePath,
+                      width: 200,
+                      height: 200,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        // 이미지 로드 실패 시 텍스트만 표시
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (imagePath != null) const SizedBox(height: 16),
           LayoutBuilder(
             builder: (context, constraints) {
               // 화면 크기에 따라 폰트 크기 조정
@@ -306,10 +354,6 @@ class SajuAnalysisView extends StatelessWidget {
               ),
             ),
           ),
-          const Text(
-            '값은 0~1 범위이며 높을수록 해당 기운이 강합니다.',
-            style: TextStyle(color: Colors.white54, fontSize: 12),
-          ),
         ],
       ),
     );
@@ -380,8 +424,8 @@ class SajuAnalysisView extends StatelessWidget {
       ..sort((a, b) => b.value.compareTo(a.value));
     final top = entries.take(3).map((entry) {
       final label = _traitLabels[entry.key] ?? entry.key;
-      final percent = (entry.value * 100).round();
-      return '$label $percent%';
+      final score = (entry.value * 100).round();
+      return '$label ${score}점';
     }).toList();
     final description =
         top.isEmpty ? '분석 정보를 찾을 수 없습니다.' : '${top.join(", ")} 특성이 두드러집니다.';

@@ -207,19 +207,25 @@ class AppRouter {
       ),
       GoRoute(
         path: '/more',
-        builder: (context, state) => MorePage(
-          isLoggedIn: _auth.isLoggedIn,
-          currentPath: state.uri.path,
-          userName: _auth.user?.name,
-          userEmail: _auth.user?.email,
-          onNavigateToLogin: () => context.go('/login'),
-          onNavigateToProfile: () => context.go('/profile?from=more'),
-          onNavigateToNotification: () => context.go('/notification-settings'),
-          onNavigateToHelp: () => context.go('/help'),
-          onNavigateToTerms: () => context.go('/terms'),
-          onNavigateToFeedback: () => context.go('/feedback'),
-          onBack: () => context.go('/home'),
-        ),
+        builder: (context, state) {
+          // characterType을 직접 사용 (이미 영어 오행 타입)
+          final characterType = _auth.user?.characterType;
+          
+          return MorePage(
+            isLoggedIn: _auth.isLoggedIn,
+            currentPath: state.uri.path,
+            userName: _auth.user?.name,
+            userEmail: _auth.user?.email,
+            characterType: characterType,
+            onNavigateToLogin: () => context.go('/login'),
+            onNavigateToProfile: () => context.go('/profile?from=more'),
+            onNavigateToNotification: () => context.go('/notification-settings'),
+            onNavigateToHelp: () => context.go('/help'),
+            onNavigateToTerms: () => context.go('/terms'),
+            onNavigateToFeedback: () => context.go('/feedback'),
+            onBack: () => context.go('/home'),
+          );
+        },
       ),
       GoRoute(
         path: '/settings',
@@ -424,9 +430,13 @@ class AppRouter {
           // 더보기에서 왔는지 확인
           final fromMore = state.uri.queryParameters['from'] == 'more';
           
+          // characterType을 직접 사용 (이미 영어 오행 타입)
+          final characterType = _auth.user?.characterType;
+          
           return ProfilePage(
             userName: _auth.user?.name ?? '사용자',
             userEmail: _auth.user?.email ?? '',
+            characterType: characterType,
             onBack: () {
               // 더보기에서 왔으면 더보기로, 아니면 이전 경로로 또는 홈으로
               if (fromMore) {

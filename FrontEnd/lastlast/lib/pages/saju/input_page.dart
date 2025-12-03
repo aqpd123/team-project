@@ -101,7 +101,11 @@ class _SajuInputPageState extends State<SajuInputPage> {
       // 데이터베이스 저장이 완료될 때까지 충분히 대기
       await Future.delayed(const Duration(milliseconds: 1000));
 
+      // 사용자 정보 새로고침 (character_type 업데이트 반영)
+      await auth.refreshUser();
+
       // 분석 결과를 바로 표시하기 위해 extra로 전달
+      if (!mounted) return;
       context.go('/my-saju', extra: {
         'result': result,
         'userInfo': userInfo,

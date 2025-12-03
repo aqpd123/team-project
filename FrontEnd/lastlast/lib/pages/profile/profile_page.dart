@@ -9,6 +9,7 @@ class ProfilePage extends StatelessWidget {
     this.userName = '사용자',
     this.userEmail = '',
     this.avatarImage,
+    this.characterType,
     this.onChangeAvatar,
     this.onNavigateToMyPosts,
     this.onNavigateToAccountSettings,
@@ -18,6 +19,7 @@ class ProfilePage extends StatelessWidget {
   final String userName;
   final String userEmail;
   final ImageProvider? avatarImage;
+  final String? characterType; // 'wood', 'fire', 'earth', 'metal', 'water'
   final VoidCallback? onChangeAvatar;
   final VoidCallback? onNavigateToMyPosts;
   final VoidCallback? onNavigateToAccountSettings;
@@ -96,6 +98,19 @@ class ProfilePage extends StatelessWidget {
   }
 
   Widget _profileHeader() {
+    // 오행에 따른 이미지 파일명 매핑
+    final characterImageMap = {
+      'wood': 'assets/tree.png',
+      'fire': 'assets/fire.png',
+      'earth': 'assets/land.png',
+      'metal': 'assets/gold.png',
+      'water': 'assets/water.png',
+    };
+    
+    final characterImagePath = characterType != null 
+        ? characterImageMap[characterType] 
+        : null;
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -107,33 +122,54 @@ class ProfilePage extends StatelessWidget {
         children: [
           Stack(
             children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: Colors.white.withValues(alpha: 0.1),
-                backgroundImage: avatarImage,
-                child: avatarImage == null
-                    ? const Icon(Icons.person_outline,
-                        color: Colors.white70, size: 36)
-                    : null,
-              ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: GestureDetector(
-                  onTap: onChangeAvatar,
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF38BDF8),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white, width: 2),
+              avatarImage != null
+                  ? CircleAvatar(
+                      radius: 40,
+                      backgroundColor: Colors.white.withValues(alpha: 0.1),
+                      backgroundImage: avatarImage,
+                    )
+                  : (characterImagePath != null
+                      ? ClipOval(
+                          child: Image.asset(
+                            characterImagePath,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return CircleAvatar(
+                                radius: 40,
+                                backgroundColor: Colors.white.withValues(alpha: 0.1),
+                                child: const Icon(Icons.person_outline,
+                                    color: Colors.white70, size: 36),
+                              );
+                            },
+                          ),
+                        )
+                      : CircleAvatar(
+                          radius: 40,
+                          backgroundColor: Colors.white.withValues(alpha: 0.1),
+                          child: const Icon(Icons.person_outline,
+                              color: Colors.white70, size: 36),
+                        )),
+              if (onChangeAvatar != null)
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: GestureDetector(
+                    onTap: onChangeAvatar,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF38BDF8),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: const Icon(Icons.camera_alt,
+                          color: Colors.white, size: 14),
                     ),
-                    child: const Icon(Icons.camera_alt,
-                        color: Colors.white, size: 14),
                   ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 12),

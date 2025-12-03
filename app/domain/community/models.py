@@ -18,6 +18,7 @@ class Post:
     like_count: Optional[int] = None
     comment_count: Optional[int] = None  # 계산된 값, DB에 저장되지 않음
     author_name: Optional[str] = None  # 작성자 닉네임
+    author_character_type: Optional[str] = None  # 작성자의 오행 캐릭터 타입
 
     @classmethod
     def from_record(cls, record: Dict[str, Any]) -> "Post":
@@ -43,6 +44,9 @@ class Post:
         # author_name 포함
         if self.author_name:
             data["author_name"] = self.author_name
+        # author_character_type 포함
+        if self.author_character_type:
+            data["author_character_type"] = self.author_character_type
         if self.created_at:
             data["created_at"] = self.created_at.isoformat()
         if self.updated_at:

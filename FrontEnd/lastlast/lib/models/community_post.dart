@@ -15,6 +15,7 @@ class CommunityPost {
     this.commentCount = 0,
     this.isLiked = false,
     this.authorName,
+    this.authorCharacterType,
   });
 
   final int id;
@@ -28,6 +29,7 @@ class CommunityPost {
   final int commentCount;
   final bool isLiked;
   final String? authorName;
+  final String? authorCharacterType; // 작성자의 오행 캐릭터 타입
 
   factory CommunityPost.fromJson(Map<String, dynamic> json) {
     return CommunityPost(
@@ -42,6 +44,7 @@ class CommunityPost {
       commentCount: json['comment_count'] as int? ?? 0,
       isLiked: json['is_liked'] as bool? ?? false,
       authorName: json['author_name'] as String?,
+      authorCharacterType: (json['author_character_type'] as String?)?.toLowerCase(),
     );
   }
   
@@ -57,6 +60,7 @@ class CommunityPost {
     int? commentCount,
     bool? isLiked,
     String? authorName,
+    String? authorCharacterType,
   }) {
     return CommunityPost(
       id: id ?? this.id,
@@ -70,6 +74,7 @@ class CommunityPost {
       commentCount: commentCount ?? this.commentCount,
       isLiked: isLiked ?? this.isLiked,
       authorName: authorName ?? this.authorName,
+      authorCharacterType: authorCharacterType ?? this.authorCharacterType,
     );
   }
 
