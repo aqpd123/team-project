@@ -12,6 +12,7 @@ class BoardPage extends StatefulWidget {
   const BoardPage({
     super.key,
     required this.isLoggedIn,
+    this.initialTab = BoardCategory.anonymous,
     this.onNavigateToLogin,
     this.onNavigateToWritePost,
     this.onNavigateToMessages,
@@ -25,6 +26,7 @@ class BoardPage extends StatefulWidget {
   });
 
   final bool isLoggedIn;
+  final BoardCategory initialTab;
   final VoidCallback? onNavigateToLogin;
   final VoidCallback? onNavigateToWritePost;
   final VoidCallback? onNavigateToMessages;
@@ -41,9 +43,15 @@ class BoardPage extends StatefulWidget {
 }
 
 class _BoardPageState extends State<BoardPage> {
-  BoardCategory _activeTab = BoardCategory.anonymous;
+  late BoardCategory _activeTab;
   String _searchQuery = '';
   bool _requestedFetch = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _activeTab = widget.initialTab;
+  }
 
   @override
   void didChangeDependencies() {
@@ -68,8 +76,7 @@ class _BoardPageState extends State<BoardPage> {
       if (_searchQuery.isEmpty) return true;
       final q = _searchQuery.toLowerCase();
       return post.title.toLowerCase().contains(q) ||
-          post.content.toLowerCase().contains(q) ||
-          post.authorLabel.toLowerCase().contains(q);
+          post.content.toLowerCase().contains(q);
     }).toList();
   }
 
@@ -191,8 +198,11 @@ class _BoardPageState extends State<BoardPage> {
                     const SizedBox(height: 16),
                     _tabSwitch(),
                     const SizedBox(height: 16),
-                    _searchField(),
-                    const SizedBox(height: 16),
+                    // 오행 게시판 탭에서는 검색 필드 숨김
+                    if (_activeTab != BoardCategory.ohang) ...[
+                      _searchField(),
+                      const SizedBox(height: 16),
+                    ],
                     if (_activeTab == BoardCategory.ohang) ...[
                       _ohangLinks(),
                       const SizedBox(height: 16),
@@ -203,9 +213,11 @@ class _BoardPageState extends State<BoardPage> {
                           ? const Center(
                               child: CircularProgressIndicator(),
                             )
-                          : posts.isEmpty
+                          : posts.isEmpty && _activeTab != BoardCategory.ohang
                               ? _emptyState()
-                              : RefreshIndicator(
+                              : _activeTab == BoardCategory.ohang
+                                  ? const SizedBox.shrink() // 오행 게시판 탭에서는 빈 상태 메시지 숨김
+                                  : RefreshIndicator(
                                   onRefresh: community.refreshPosts,
                                   child: LayoutBuilder(
                                     builder: (context, constraints) {

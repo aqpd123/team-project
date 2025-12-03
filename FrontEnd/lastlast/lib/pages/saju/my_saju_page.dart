@@ -12,10 +12,14 @@ class MySajuPage extends StatefulWidget {
     super.key,
     this.onBack,
     this.onNavigateToSaju,
+    this.initialResult,
+    this.initialUserInfo,
   });
 
   final VoidCallback? onBack;
   final VoidCallback? onNavigateToSaju;
+  final SajuAnalysisResult? initialResult;
+  final Map<String, String>? initialUserInfo;
 
   @override
   State<MySajuPage> createState() => _MySajuPageState();
@@ -26,11 +30,40 @@ class _MySajuPageState extends State<MySajuPage> {
   SajuAnalysisResult? _result;
   Map<String, String>? _userInfo;
   String? _error;
+  bool _isInitialLoad = true;
 
   @override
   void initState() {
     super.initState();
-    _loadMySaju();
+    // 초기 결과가 있으면 바로 표시, 없으면 데이터베이스에서 로드
+    if (widget.initialResult != null && widget.initialUserInfo != null) {
+      _result = widget.initialResult;
+      _userInfo = widget.initialUserInfo;
+      _isLoading = false;
+      _isInitialLoad = false;
+    } else {
+      _loadMySaju();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 첫 로드가 완료된 후에만 새로고침 (무한 루프 방지)
+    if (_isInitialLoad) {
+      _isInitialLoad = false;
+      return;
+    }
+    
+    // 페이지가 다시 표시될 때만 데이터 새로고침
+    if (mounted && !_isLoading) {
+      // 약간의 지연을 두어 데이터베이스 저장이 완료된 후 로드
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted && !_isLoading) {
+          _loadMySaju();
+        }
+      });
+    }
   }
 
   Future<void> _loadMySaju() async {
@@ -81,10 +114,12 @@ class _MySajuPageState extends State<MySajuPage> {
       
       if (sajuAnalysis == null || sajuAnalysis.isEmpty) {
         print('⚠️ 사주 분석 결과가 없습니다');
-        setState(() {
-          _isLoading = false;
-          _error = null; // 빈 상태로 표시
-        });
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _error = null; // 빈 상태로 표시
+          });
+        }
         return;
       }
 

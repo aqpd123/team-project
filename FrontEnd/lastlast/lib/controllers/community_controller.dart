@@ -60,15 +60,16 @@ class CommunityController extends ChangeNotifier {
     if (!_auth.isLoggedIn || _auth.user == null) {
       throw const ApiException('로그인이 필요합니다.', statusCode: 401);
     }
-    await _api.post(
-      '/posts',
-      data: {
-        'title': title,
-        'content': content,
-        'board_type': boardType,
-        'author_id': _auth.user!.id,
-      },
-    );
+    final data = <String, dynamic>{
+      'title': title,
+      'content': content,
+      'author_id': _auth.user!.id,
+    };
+    // boardType이 null이 아니고 비어있지 않을 때만 추가
+    if (boardType != null && boardType.isNotEmpty) {
+      data['board_type'] = boardType;
+    }
+    await _api.post('/posts', data: data);
     await refreshPosts();
   }
 
@@ -78,15 +79,12 @@ class CommunityController extends ChangeNotifier {
 
   Future<List<CommunityPost>> getMyPosts() async {
     if (!_auth.isLoggedIn || _auth.user == null) {
-      return [];
+      throw const ApiException('로그인이 필요합니다.', statusCode: 401);
     }
     try {
       final response = await _api.get(
-        '/posts',
-        queryParameters: {
-          'author_id': _auth.user!.id,
-          'page_size': 100,
-        },
+        '/posts/my',
+        queryParameters: {'page_size': 100},
       );
       final items = response['items'] as List<dynamic>? ?? const [];
       return items
@@ -94,7 +92,7 @@ class CommunityController extends ChangeNotifier {
           .map(CommunityPost.fromJson)
           .toList();
     } on ApiException {
-      return [];
+      rethrow;
     }
   }
 
@@ -120,6 +118,16 @@ class CommunityController extends ChangeNotifier {
     } on ApiException {
       rethrow;
     }
+  }
+
+  Future<Map<String, dynamic>> toggleLike(int postId) async {
+    if (!_auth.isLoggedIn || _auth.user == null) {
+      throw const ApiException('로그인이 필요합니다.', statusCode: 401);
+    }
+    final response = await _api.post('/posts/$postId/like');
+    // 게시글 목록도 업데이트
+    await refreshPosts();
+    return response as Map<String, dynamic>;
   }
 
   Future<CommentModel> addComment({

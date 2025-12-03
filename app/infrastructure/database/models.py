@@ -50,8 +50,19 @@ comments = Table(
     Column("post_id", Integer, ForeignKey("posts.post_id"), nullable=False),
     Column("author_id", Integer, ForeignKey("users.user_id"), nullable=False),
     Column("content", Text, nullable=False),
+    Column("anonymous_number", Integer),  # 게시물 단위로 순차적으로 부여되는 익명 번호
     Column("created_at", DateTime, server_default=func.now()),
     Column("updated_at", DateTime, server_default=func.now(), onupdate=func.now()),
+)
+
+post_likes = Table(
+    "post_likes",
+    metadata,
+    Column("like_id", Integer, primary_key=True, autoincrement=True),
+    Column("post_id", Integer, ForeignKey("posts.post_id"), nullable=False),
+    Column("user_id", Integer, ForeignKey("users.user_id"), nullable=False),
+    Column("created_at", DateTime, server_default=func.now()),
+    UniqueConstraint("post_id", "user_id", name="ux_post_like"),
 )
 
 compatibility_requests = Table(

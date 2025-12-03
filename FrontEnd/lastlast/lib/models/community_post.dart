@@ -13,6 +13,8 @@ class CommunityPost {
     this.updatedAt,
     this.likeCount = 0,
     this.commentCount = 0,
+    this.isLiked = false,
+    this.authorName,
   });
 
   final int id;
@@ -24,6 +26,8 @@ class CommunityPost {
   final DateTime? updatedAt;
   final int likeCount;
   final int commentCount;
+  final bool isLiked;
+  final String? authorName;
 
   factory CommunityPost.fromJson(Map<String, dynamic> json) {
     return CommunityPost(
@@ -36,6 +40,36 @@ class CommunityPost {
       updatedAt: _parseDate(json['updated_at']),
       likeCount: json['like_count'] as int? ?? 0,
       commentCount: json['comment_count'] as int? ?? 0,
+      isLiked: json['is_liked'] as bool? ?? false,
+      authorName: json['author_name'] as String?,
+    );
+  }
+  
+  CommunityPost copyWith({
+    int? id,
+    String? title,
+    String? content,
+    int? authorId,
+    String? boardType,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    int? likeCount,
+    int? commentCount,
+    bool? isLiked,
+    String? authorName,
+  }) {
+    return CommunityPost(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      authorId: authorId ?? this.authorId,
+      boardType: boardType ?? this.boardType,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      likeCount: likeCount ?? this.likeCount,
+      commentCount: commentCount ?? this.commentCount,
+      isLiked: isLiked ?? this.isLiked,
+      authorName: authorName ?? this.authorName,
     );
   }
 
@@ -47,7 +81,13 @@ class CommunityPost {
   String get ohangKey =>
       _ohangKeys.contains(_normalizedBoardType) ? _normalizedBoardType : '';
 
-  String get authorLabel => '?�명 #$authorId';
+  String get authorLabel {
+    // 오행 게시판인 경우 닉네임 표시, 익명 게시판인 경우 익명 표시
+    if (category == BoardCategory.ohang && authorName != null && authorName!.isNotEmpty) {
+      return authorName!;
+    }
+    return '익명';
+  }
 
   String get dateLabel {
     final base = updatedAt ?? createdAt;
@@ -78,5 +118,4 @@ class CommunityPostDetail {
   final CommunityPost post;
   final List<CommentModel> comments;
 }
-
 

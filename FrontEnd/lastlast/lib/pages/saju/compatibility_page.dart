@@ -337,7 +337,7 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
         Expanded(
           child: Center(
             child: const Text(
-              '사주궁합보기 🔮',
+              '사주 궁합 보기 🔮',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 22,

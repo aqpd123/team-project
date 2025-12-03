@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../controllers/community_controller.dart';
 import '../../models/community_post.dart';
@@ -10,10 +11,12 @@ class MyPostsPage extends StatefulWidget {
     super.key,
     this.onBack,
     this.onWritePost,
+    this.fromMore = false,
   });
 
   final VoidCallback? onBack;
   final VoidCallback? onWritePost;
+  final bool fromMore;
 
   @override
   State<MyPostsPage> createState() => _MyPostsPageState();
@@ -132,10 +135,15 @@ class _MyPostsPageState extends State<MyPostsPage> {
                                   return PostCard(
                                     title: post.title,
                                     content: post.content,
-                                    author: post.authorLabel,
+                                    author: '',
                                     dateLabel: post.dateLabel,
                                     likes: post.likeCount,
                                     comments: post.commentCount,
+                                    onTap: () {
+                                      // 게시글 상세 페이지로 이동 (나의 글 관리에서 왔다는 정보 전달)
+                                      final queryParams = widget.fromMore ? '?from=my-posts&fromMore=true' : '?from=my-posts';
+                                      context.push('/posts/${post.id}$queryParams');
+                                    },
                                   );
                                 },
                               ),

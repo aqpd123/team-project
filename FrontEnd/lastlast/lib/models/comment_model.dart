@@ -4,16 +4,20 @@ class CommentModel {
     required this.postId,
     required this.authorId,
     required this.content,
+    this.anonymousNumber,
     this.createdAt,
     this.updatedAt,
+    this.authorName,
   });
 
   final int id;
   final int postId;
   final int authorId;
   final String content;
+  final int? anonymousNumber;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String? authorName;
 
   factory CommentModel.fromJson(Map<String, dynamic> json) {
     return CommentModel(
@@ -21,8 +25,10 @@ class CommentModel {
       postId: json['post_id'] as int? ?? 0,
       authorId: json['author_id'] as int? ?? 0,
       content: (json['content'] ?? '') as String,
+      anonymousNumber: json['anonymous_number'] as int?,
       createdAt: _parseDate(json['created_at']),
       updatedAt: _parseDate(json['updated_at']),
+      authorName: json['author_name'] as String?,
     );
   }
 
@@ -33,7 +39,13 @@ class CommentModel {
     return null;
   }
 
-  String get authorLabel => '익명 #$authorId';
+  String get authorLabel {
+    if (anonymousNumber != null) {
+      return '익명 #$anonymousNumber';
+    }
+    // anonymous_number가 없는 경우 (기존 데이터 호환성)
+    return '익명 #$authorId';
+  }
 
   String get dateLabel {
     final base = updatedAt ?? createdAt;

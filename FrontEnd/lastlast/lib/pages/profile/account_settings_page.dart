@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../controllers/auth_controller.dart';
+import '../../services/api_client.dart';
 
 /// React `pages/account-settings/page.tsx`를 Flutter로 변환한 페이지.
 /// 계정 정보 관리, 비밀번호 변경, 로그아웃, 회원탈퇴 기능을 제공합니다.
@@ -35,8 +37,8 @@ class AccountSettingsData {
 }
 
 class _AccountSettingsPageState extends State<AccountSettingsPage> {
-  final _nicknameCtrl = TextEditingController(text: '사용자님');
-  final _emailCtrl = TextEditingController(text: 'user@example.com');
+  late final TextEditingController _nicknameCtrl;
+  late final TextEditingController _emailCtrl;
   final _currentPasswordCtrl = TextEditingController();
   final _newPasswordCtrl = TextEditingController();
   final _confirmPasswordCtrl = TextEditingController();
@@ -44,6 +46,30 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   bool _showPasswordChangeForm = false;
   bool _isCurrentPasswordVerified = false;
   bool _showDeleteModal = false;
+  bool _isLoading = false;
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 빈 값으로 초기화
+    _nicknameCtrl = TextEditingController();
+    _emailCtrl = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // didChangeDependencies에서 사용자 정보 로드
+    if (!_initialized) {
+      final auth = AuthScope.of(context);
+      if (auth.user != null) {
+        _nicknameCtrl.text = auth.user!.name;
+        _emailCtrl.text = auth.user!.email;
+      }
+      _initialized = true;
+    }
+  }
 
   @override
   void dispose() {
@@ -55,20 +81,47 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     super.dispose();
   }
 
+
   Future<void> _handleCurrentPasswordVerification() async {
     if (_currentPasswordCtrl.text.trim().isEmpty) {
       _showSnackBar('현재 비밀번호를 입력해주세요.');
       return;
     }
 
-    // 실제로는 서버에서 비밀번호를 확인해야 하지만, 여기서는 예시로 처리
-    // 예시: 현재 비밀번호가 'password123'이라고 가정
-    if (_currentPasswordCtrl.text == 'password123') {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final auth = AuthScope.of(context);
+      if (auth.user == null) {
+        setState(() {
+          _isLoading = false;
+        });
+        _showSnackBar('로그인이 필요합니다.');
+        return;
+      }
+
+      // 로그인 API를 사용하여 현재 비밀번호 확인
+      // 토큰 없이 호출하기 위해 새로운 ApiClient 인스턴스 사용
+      final verifyApi = ApiClient();
+      await verifyApi.post(
+        '/auth/login',
+        data: {
+          'email': auth.user!.email,
+          'password': _currentPasswordCtrl.text,
+        },
+      );
+
       setState(() {
         _isCurrentPasswordVerified = true;
+        _isLoading = false;
       });
       _showSnackBar('현재 비밀번호가 확인되었습니다. 새 비밀번호를 설정해주세요.');
-    } else {
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
       _showSnackBar('현재 비밀번호가 일치하지 않습니다.');
       setState(() {
         _currentPasswordCtrl.clear();
@@ -424,7 +477,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: _handleCurrentPasswordVerification,
+                  onPressed: _isLoading ? null : _handleCurrentPasswordVerification,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFACC15),
                     foregroundColor: const Color(0xFF0F172A),
@@ -433,10 +486,19 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: const Text(
-                    '확인',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFF0F172A),
+                          ),
+                        )
+                      : const Text(
+                          '확인',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                 ),
               ),
             ],

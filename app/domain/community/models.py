@@ -16,10 +16,18 @@ class Post:
     updated_at: Optional[datetime] = None
     view_count: Optional[int] = None
     like_count: Optional[int] = None
+    comment_count: Optional[int] = None  # 계산된 값, DB에 저장되지 않음
+    author_name: Optional[str] = None  # 작성자 닉네임
 
     @classmethod
     def from_record(cls, record: Dict[str, Any]) -> "Post":
-        return cls(**record)
+        # comment_count는 Post 모델의 필드이지만 from_record에서 제외 (별도 처리)
+        filtered = {k: v for k, v in record.items() if k != 'comment_count'}
+        post = cls(**filtered)
+        # comment_count는 별도로 저장 (to_dict에서 사용)
+        if 'comment_count' in record:
+            post.comment_count = record.get('comment_count')
+        return post
 
     def to_dict(self) -> Dict[str, Any]:
         data = {
@@ -30,7 +38,11 @@ class Post:
             "board_type": self.board_type,
             "view_count": self.view_count,
             "like_count": self.like_count,
+            "comment_count": self.comment_count or 0,
         }
+        # author_name 포함
+        if self.author_name:
+            data["author_name"] = self.author_name
         if self.created_at:
             data["created_at"] = self.created_at.isoformat()
         if self.updated_at:
@@ -44,8 +56,10 @@ class Comment:
     post_id: int
     author_id: int
     content: str
+    anonymous_number: Optional[int] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    author_name: Optional[str] = None  # 작성자 닉네임
 
     @classmethod
     def from_record(cls, record: Dict[str, Any]) -> "Comment":
@@ -57,7 +71,11 @@ class Comment:
             "post_id": self.post_id,
             "author_id": self.author_id,
             "content": self.content,
+            "anonymous_number": self.anonymous_number,
         }
+        # author_name 포함
+        if self.author_name:
+            data["author_name"] = self.author_name
         if self.created_at:
             data["created_at"] = self.created_at.isoformat()
         if self.updated_at:

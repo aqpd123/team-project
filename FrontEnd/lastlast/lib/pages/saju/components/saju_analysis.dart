@@ -30,33 +30,6 @@ const Map<String, String> _characterLabels = {
   'unknown': '분류되지 않음',
 };
 
-const List<String> _stems = ['갑', '을', '병', '정', '무', '기', '경', '신', '임', '계'];
-const List<String> _branches = [
-  '자',
-  '축',
-  '인',
-  '묘',
-  '진',
-  '사',
-  '오',
-  '미',
-  '신',
-  '유',
-  '술',
-  '해'
-];
-const Map<String, int> _hourStartMap = {
-  '갑': 1,
-  '을': 1,
-  '병': 3,
-  '정': 3,
-  '무': 5,
-  '기': 5,
-  '경': 7,
-  '신': 7,
-  '임': 9,
-  '계': 9,
-};
 
 class SajuSummary {
   SajuSummary({
@@ -86,7 +59,6 @@ class SajuAnalysisView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final saju = _normalizedSaju();
     final character = _characterLabels[result.character] ?? result.character;
 
     return Scaffold(
@@ -108,8 +80,6 @@ class SajuAnalysisView extends StatelessWidget {
                             _buildCharacterCard(character),
                             const SizedBox(height: 16),
                             _buildInfoCard(),
-                            const SizedBox(height: 16),
-                            _buildPillarsCard(saju),
                             const SizedBox(height: 16),
                             _buildElementsCard(),
                             const SizedBox(height: 16),
@@ -306,58 +276,6 @@ class SajuAnalysisView extends StatelessWidget {
     );
   }
 
-  Widget _buildPillarsCard(Map<String, String> saju) {
-    return _buildCard(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _sectionTitle('사주팔자 🔮'),
-          const SizedBox(height: 4),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              // 화면 크기에 따라 childAspectRatio를 동적으로 조정
-              final cardWidth = constraints.maxWidth;
-              // 작은 화면에서는 더 작은 비율 사용
-              final aspectRatio = cardWidth < 300 ? 3.5 : 4.0;
-              return GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: aspectRatio,
-                mainAxisSpacing: 3,
-                crossAxisSpacing: 3,
-                padding: EdgeInsets.zero,
-                children: [
-                  _PillarTile(
-                    label: '년주',
-                    gan: saju['year_gan'],
-                    ji: saju['year_ji'],
-                  ),
-                  _PillarTile(
-                    label: '월주',
-                    gan: saju['month_gan'],
-                    ji: saju['month_ji'],
-                  ),
-                  _PillarTile(
-                    label: '일주',
-                    gan: saju['day_gan'],
-                    ji: saju['day_ji'],
-                  ),
-                  _PillarTile(
-                    label: '시주',
-                    gan: saju['time_gan'],
-                    ji: saju['time_ji'],
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildElementsCard() {
     final elements = _elementDisplay
@@ -534,94 +452,6 @@ class SajuAnalysisView extends StatelessWidget {
     );
   }
 
-  Map<String, String> _normalizedSaju() {
-    final map = Map<String, String>.from(summary.saju);
-    final hasTime = (map['time_gan']?.isNotEmpty ?? false) &&
-        (map['time_ji']?.isNotEmpty ?? false);
-    if (!hasTime) {
-      map.addAll(_fallbackTime(map));
-    }
-    return map;
-  }
-
-  Map<String, String> _fallbackTime(Map<String, String> saju) {
-    final dayGan = saju['day_gan'];
-    final start = dayGan != null ? _hourStartMap[dayGan] : null;
-    if (start == null) return {};
-    const hourBranchIndex = 7; // 정오(오시)
-    final branch = _branches[hourBranchIndex - 1];
-    final stemIndex = ((start + (hourBranchIndex - 1) * 2) - 1) % 10;
-    final stem = _stems[stemIndex];
-    return {'time_gan': stem, 'time_ji': branch};
-  }
-}
-
-class _PillarTile extends StatelessWidget {
-  const _PillarTile({
-    required this.label,
-    this.gan,
-    this.ji,
-  });
-
-  final String label;
-  final String? gan;
-  final String? ji;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // 화면 크기에 따라 폰트 크기 조정
-        final isSmall = constraints.maxWidth < 150;
-        final labelSize = isSmall ? 14.0 : 18.0;
-        final ganSize = isSmall ? 24.0 : 32.0;
-        final jiSize = isSmall ? 18.0 : 24.0;
-        
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: const Color(0xFFA5F3FC),
-                    fontSize: labelSize,
-                    height: 1.1,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  gan ?? '-',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: ganSize,
-                    fontWeight: FontWeight.bold,
-                    height: 1.1,
-                  ),
-                ),
-                Text(
-                  ji ?? '-',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: jiSize,
-                    height: 1.1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 }
 
 class _ElementTile extends StatelessWidget {

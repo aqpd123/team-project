@@ -79,13 +79,34 @@ def list_posts():
 @require_auth(optional=True)
 def get_post(post_id: int):
     try:
-        post = community_service.get_post(post_id)
+        current_user = get_current_user()
+        user_id = current_user.get("user_id") if current_user else None
+        post = community_service.get_post(post_id, user_id=user_id)
         comments = post.get("comments", [])
         body = dict(post)
         body.pop("comments", None)
         return jsonify({"post": body, "comments": comments})
     except AppError as exc:
         return _error_response(exc)
+
+
+@bp.get("/my")
+@require_auth()
+def list_my_posts():
+    page = int(request.args.get("page", 1))
+    page_size = int(request.args.get("page_size", 20))
+    try:
+        current_user = get_current_user()
+        items = community_service.list_my_posts(
+            author_id=current_user["user_id"],
+            page=page,
+            page_size=page_size,
+        )
+        return jsonify({"items": items, "count": len(items), "page": page})
+    except AppError as exc:
+        return _error_response(exc)
+    except Exception as exc:
+        return _handle_exception(exc)
 
 
 @bp.post("/<int:post_id>/comments")
@@ -102,10 +123,26 @@ def add_comment(post_id: int):
             author_id=author_id,
             content=payload["content"],
         )
-        post = community_service.get_post(post_id)
+        post = community_service.get_post(post_id, user_id=current_user["user_id"])
         comment = next((c for c in post.get("comments", []) if c["comment_id"] == comment_id), None)
         return jsonify({"comment": comment}), 201
     except AppError as exc:
         return _error_response(exc)
+
+
+@bp.post("/<int:post_id>/like")
+@require_auth()
+def toggle_like(post_id: int):
+    try:
+        current_user = get_current_user()
+        is_liked, like_count = community_service.toggle_like(
+            post_id=post_id,
+            user_id=current_user["user_id"],
+        )
+        return jsonify({"is_liked": is_liked, "like_count": like_count}), 200
+    except AppError as exc:
+        return _error_response(exc)
+    except Exception as exc:
+        return _handle_exception(exc)
 
 

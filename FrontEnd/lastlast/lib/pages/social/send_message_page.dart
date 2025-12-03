@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../controllers/auth_controller.dart';
 import '../../controllers/message_controller.dart';
@@ -66,82 +67,106 @@ class _SendMessagePageState extends State<SendMessagePage> {
 
   @override
   Widget build(BuildContext context) {
+    // 하단 단축키 투명도 방지
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        systemNavigationBarColor: Colors.black,
+        systemNavigationBarIconBrightness: Brightness.light,
+        systemNavigationBarDividerColor: Colors.transparent,
+      ),
+    );
+    
     final auth = AuthScope.of(context);
     final controller = MessageScope.of(context);
     final currentUserId = auth.user?.id ?? 0;
 
     return Scaffold(
+      extendBody: true,
       backgroundColor: const Color(0xFFF5F5F5),
-      body: SafeArea(
-        child: AnimatedBuilder(
-          animation: controller,
-          builder: (context, _) {
-            final messages = controller.conversationFor(widget.recipientId);
-            return Column(
-              children: [
-                _buildHeader(),
-                Expanded(
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      final message = messages[index];
-                      final isMine = message.senderId == currentUserId;
-                      final timeLabel = message.createdAt != null
-                          ? '${message.createdAt!.hour.toString().padLeft(2, '0')}:${message.createdAt!.minute.toString().padLeft(2, '0')}'
-                          : '';
-                      return Align(
-                        alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isMine ? const Color(0xFFFACC15) : Colors.white,
-                            borderRadius: BorderRadius.only(
-                              topLeft: const Radius.circular(18),
-                              topRight: const Radius.circular(18),
-                              bottomLeft: Radius.circular(isMine ? 18 : 6),
-                              bottomRight: Radius.circular(isMine ? 6 : 18),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: AnimatedBuilder(
+              animation: controller,
+              builder: (context, _) {
+                final messages = controller.conversationFor(widget.recipientId);
+                return Column(
+                  children: [
+                    _buildHeader(),
+                    Expanded(
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(16),
+                        itemCount: messages.length,
+                        itemBuilder: (context, index) {
+                          final message = messages[index];
+                          final isMine = message.senderId == currentUserId;
+                          final timeLabel = message.createdAt != null
+                              ? '${message.createdAt!.hour.toString().padLeft(2, '0')}:${message.createdAt!.minute.toString().padLeft(2, '0')}'
+                              : '';
+                          return Align(
+                            alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isMine ? const Color(0xFFFACC15) : Colors.white,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: const Radius.circular(18),
+                                  topRight: const Radius.circular(18),
+                                  bottomLeft: Radius.circular(isMine ? 18 : 6),
+                                  bottomRight: Radius.circular(isMine ? 6 : 18),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment:
+                                    isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    message.content,
+                                    style: TextStyle(
+                                      color: isMine ? Colors.black : Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    timeLabel,
+                                    style: const TextStyle(
+                                      color: Colors.black45,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 6,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment:
-                                isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                message.content,
-                                style: TextStyle(
-                                  color: isMine ? Colors.black : Colors.black87,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                timeLabel,
-                                style: const TextStyle(
-                                  color: Colors.black45,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                _inputBar(controller),
-              ],
-            );
-          },
-        ),
+                          );
+                        },
+                      ),
+                    ),
+                    _inputBar(controller),
+                  ],
+                );
+              },
+            ),
+          ),
+          // 하단 단축키 영역을 덮는 검정색 배경
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              height: MediaQuery.of(context).padding.bottom,
+              color: Colors.black,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -211,6 +236,7 @@ class _SendMessagePageState extends State<SendMessagePage> {
               controller: _messageController,
               minLines: 1,
               maxLines: 4,
+              style: const TextStyle(color: Colors.black87),
               decoration: InputDecoration(
                 hintText: '메시지를 입력하세요...',
                 hintStyle: const TextStyle(color: Colors.black38),

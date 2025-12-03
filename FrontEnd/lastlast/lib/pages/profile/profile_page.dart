@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../shared/widgets/mystic_background.dart';
 
@@ -9,7 +10,6 @@ class ProfilePage extends StatelessWidget {
     this.userEmail = '',
     this.avatarImage,
     this.onChangeAvatar,
-    this.onNavigateToMySaju,
     this.onNavigateToMyPosts,
     this.onNavigateToAccountSettings,
     this.onBack,
@@ -19,20 +19,31 @@ class ProfilePage extends StatelessWidget {
   final String userEmail;
   final ImageProvider? avatarImage;
   final VoidCallback? onChangeAvatar;
-  final VoidCallback? onNavigateToMySaju;
   final VoidCallback? onNavigateToMyPosts;
   final VoidCallback? onNavigateToAccountSettings;
   final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
+    // 하단 단축키 투명도 방지
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        systemNavigationBarColor: Colors.black,
+        systemNavigationBarIconBrightness: Brightness.light,
+        systemNavigationBarDividerColor: Colors.transparent,
+      ),
+    );
+    
     return Scaffold(
-      body: MysticBackground(
-        padding: EdgeInsets.zero,
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
-            children: [
+      extendBody: true,
+      body: Stack(
+        children: [
+          MysticBackground(
+            padding: EdgeInsets.zero,
+            child: SafeArea(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
+                children: [
               Row(
                 children: [
                   _circleButton(Icons.arrow_back, onBack),
@@ -51,14 +62,6 @@ class ProfilePage extends StatelessWidget {
               _profileHeader(),
               const SizedBox(height: 16),
               _menuButton(
-                icon: Icons.auto_awesome,
-                gradient: const [Color(0xFFFACC15), Color(0xFFF97316)],
-                title: '나의 사주 확인하기',
-                subtitle: '저장된 사주 결과 보기',
-                onTap: onNavigateToMySaju,
-              ),
-              const SizedBox(height: 12),
-              _menuButton(
                 icon: Icons.article_outlined,
                 gradient: const [Color(0xFF38BDF8), Color(0xFF22D3EE)],
                 title: '나의 글 관리',
@@ -76,6 +79,18 @@ class ProfilePage extends StatelessWidget {
             ],
           ),
         ),
+          ),
+          // 하단 단축키 영역을 덮는 검정색 배경
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              height: MediaQuery.of(context).padding.bottom,
+              color: Colors.black,
+            ),
+          ),
+        ],
       ),
     );
   }

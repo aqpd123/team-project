@@ -114,18 +114,20 @@ class HomePage extends StatelessWidget {
     return Column(
       children: const [
         Text(
-          '운명을 만드는\n공간 ✨',
+          '운명을 만드는\n공간',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white,
             fontSize: 40,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
             height: 1.3,
+            letterSpacing: 0,
+            fontFamily: 'NotoSansKR',
             shadows: [
               Shadow(
                 offset: Offset(0, 2),
-                blurRadius: 6,
-                color: Colors.black54,
+                blurRadius: 8,
+                color: Colors.black45,
               ),
             ],
           ),
@@ -136,7 +138,10 @@ class HomePage extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Color(0xFFA5F3FC),
-            fontSize: 20,
+            fontSize: 18,
+            fontWeight: FontWeight.w400,
+            letterSpacing: 0.3,
+            fontFamily: 'NotoSansKR',
           ),
         ),
       ],
@@ -190,7 +195,7 @@ class HomePage extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: const [
                         Text(
-                          '사주보러가기',
+                          '사주 보러 가기',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 20,

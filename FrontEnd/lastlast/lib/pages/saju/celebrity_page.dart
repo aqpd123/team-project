@@ -28,38 +28,52 @@ class ElementFilter {
     required this.name,
     required this.circleColor,
     required this.gradient,
+    required this.icon,
+    required this.description,
   });
 
   final String name;
   final Color circleColor;
   final List<Color> gradient;
+  final IconData icon;
+  final String description;
 }
 
 const _elements = [
   ElementFilter(
-    name: '화',
+    name: '화 (火)',
     circleColor: Color(0xFFF87171),
     gradient: [Color(0xFFEF4444), Color(0xFFF97316)],
+    icon: Icons.local_fire_department_outlined,
+    description: '불의 기운 · 뜨거운 열정',
   ),
   ElementFilter(
-    name: '수',
+    name: '수 (水)',
     circleColor: Color(0xFF38BDF8),
     gradient: [Color(0xFF0EA5E9), Color(0xFF22D3EE)],
+    icon: Icons.water_drop_outlined,
+    description: '물의 기운 · 유연한 흐름',
   ),
   ElementFilter(
-    name: '목',
+    name: '목 (木)',
     circleColor: Color(0xFF34D399),
     gradient: [Color(0xFF10B981), Color(0xFF059669)],
+    icon: Icons.eco_outlined,
+    description: '나무의 기운 · 성장과 발전',
   ),
   ElementFilter(
-    name: '금',
+    name: '금 (金)',
     circleColor: Color(0xFF94A3B8),
     gradient: [Color(0xFF9CA3AF), Color(0xFF475569)],
+    icon: Icons.hexagon_outlined,
+    description: '금속의 기운 · 강인한 의지',
   ),
   ElementFilter(
-    name: '토',
+    name: '토 (土)',
     circleColor: Color(0xFFFACC15),
     gradient: [Color(0xFFFBBF24), Color(0xFFF59E0B)],
+    icon: Icons.landscape_outlined,
+    description: '땅의 기운 · 안정과 신뢰',
   ),
 ];
 
@@ -140,14 +154,16 @@ class _CelebritySajuPageState extends State<CelebritySajuPage> {
           Positioned.fill(
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
                 child: Column(
                   children: [
                     _buildHeader(),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     Expanded(
                       child: _selectedElement == null
-                          ? _buildElementList()
+                          ? SingleChildScrollView(
+                              child: _buildElementList(),
+                            )
                           : _buildCelebrityList(),
                     ),
                   ],
@@ -218,7 +234,7 @@ class _CelebritySajuPageState extends State<CelebritySajuPage> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         const Text(
           '유명인과 사주보기 ⭐',
           style: TextStyle(
@@ -227,63 +243,100 @@ class _CelebritySajuPageState extends State<CelebritySajuPage> {
             fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         Text(
           subtitle,
-          style: const TextStyle(color: Color(0xFFA5F3FC), fontSize: 16),
+          style: const TextStyle(color: Color(0xFFA5F3FC), fontSize: 14),
         ),
       ],
     );
   }
 
   Widget _buildElementList() {
-    return ListView.separated(
-      itemCount: _elements.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final element = _elements[index];
-        return GestureDetector(
-          onTap: () => setState(() => _selectedElement = element.name),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: _cardDecoration(),
-            child: Row(
-              children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: element.circleColor.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: _elements.asMap().entries.map((entry) {
+        final index = entry.key;
+        final element = entry.value;
+        return Padding(
+          padding: EdgeInsets.only(bottom: index < _elements.length - 1 ? 10 : 0),
+          child: GestureDetector(
+            onTap: () => setState(() => _selectedElement = element.name.split(' ')[0]),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(32),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    blurRadius: 30,
+                    offset: const Offset(0, 20),
                   ),
-                  child: Center(
-                    child: Text(
-                      element.name,
-                      style: const TextStyle(
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: element.gradient,
+                      ),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        element.icon,
                         color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                        size: 28,
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    element.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          element.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          element.description,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 13,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70),
-              ],
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Colors.white70,
+                    size: 18,
+                  ),
+                ],
+              ),
             ),
           ),
         );
-      },
+      }).toList(),
     );
   }
 

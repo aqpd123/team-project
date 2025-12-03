@@ -46,7 +46,7 @@ class LoginSchema(BaseSchema):
 class PostCreateSchema(BaseSchema):
     title = fields.Str(required=True, validate=validate.Length(min=1, max=255))
     content = fields.Str(required=True, validate=validate.Length(min=1))
-    board_type = fields.Str(validate=validate.Length(min=1))
+    board_type = fields.Str(allow_none=True, validate=validate.Length(min=1), load_default=None)
     author_id = fields.Int()
 
 

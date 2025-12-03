@@ -284,61 +284,59 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        widget.celebrity.name,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: nameFontSize,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    Text(
+                      widget.celebrity.name,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: nameFontSize,
+                        fontWeight: FontWeight.w600,
                       ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                     const SizedBox(height: 4),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        widget.celebrity.profession,
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: professionFontSize,
-                        ),
+                    Text(
+                      widget.celebrity.profession,
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: professionFontSize,
                       ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
-                    const SizedBox(height: 2),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
+                    if (widget.celebrity.birthDate.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
                         widget.celebrity.birthDate,
                         style: TextStyle(
                           color: Colors.white54,
                           fontSize: dateFontSize,
                         ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                    ),
-                    child: Text(
-                      widget.celebrity.element,
-                      style: const TextStyle(color: Colors.white),
-                    ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                ),
+                child: Text(
+                  widget.celebrity.element,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],

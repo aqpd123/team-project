@@ -78,10 +78,46 @@ class _WritePostPageState extends State<WritePostPage> {
             child: ListView(
               padding: const EdgeInsets.all(24),
               children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Stack(
+                alignment: Alignment.center,
                 children: [
-                  _backButton(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _backButton(),
+                      GestureDetector(
+                        onTap: _submitting ? null : _handleSubmit,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.4),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: _submitting
+                              ? const SizedBox(
+                                  height: 16,
+                                  width: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  '완료',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const Text(
                     '글쓰기 ✍️',
                     style: TextStyle(
@@ -89,16 +125,6 @@ class _WritePostPageState extends State<WritePostPage> {
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
                     ),
-                  ),
-                  TextButton(
-                    onPressed: _submitting ? null : _handleSubmit,
-                    child: _submitting
-                        ? const SizedBox(
-                            height: 16,
-                            width: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('완료'),
                   ),
                 ],
               ),

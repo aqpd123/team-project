@@ -63,19 +63,11 @@ class PostCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text(
-                  '👤 $author',
-                  style: const TextStyle(color: Color(0xFFA5F3FC), fontSize: 13),
-                ),
-                Row(
-                  children: [
-                    _iconStat(Icons.favorite_border, likes),
-                    const SizedBox(width: 12),
-                    _iconStat(Icons.chat_bubble_outline, comments),
-                  ],
-                ),
+                _iconStat(Icons.favorite_border, likes),
+                const SizedBox(width: 12),
+                _iconStat(Icons.chat_bubble_outline, comments),
               ],
             ),
           ],

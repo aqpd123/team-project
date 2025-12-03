@@ -37,12 +37,6 @@ class AppBottomNavigationBar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF0F172A).withValues(alpha: 0.95),
-        border: Border(
-          top: BorderSide(
-            color: Colors.white.withValues(alpha: 0.2),
-            width: 1,
-          ),
-        ),
       ),
       child: SafeArea(
         child: Container(

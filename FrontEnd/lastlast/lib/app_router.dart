@@ -2,7 +2,9 @@ import 'package:go_router/go_router.dart';
 
 import 'controllers/auth_controller.dart';
 import 'models/friend_models.dart';
+import 'models/saju_models.dart';
 import 'pages/auth/login_page.dart';
+import 'models/community_post.dart';
 import 'pages/community/board_page.dart';
 import 'pages/community/messages_page.dart';
 import 'pages/community/my_posts_page.dart';
@@ -170,7 +172,23 @@ class AppRouter {
           final fromProfile = state.uri.queryParameters['from'] == 'profile';
           final fromMore = state.uri.queryParameters['fromMore'] == 'true';
           
+          // extra에서 분석 결과 받기
+          SajuAnalysisResult? initialResult;
+          Map<String, String>? initialUserInfo;
+          
+          if (state.extra is Map<String, dynamic>) {
+            final extra = state.extra as Map<String, dynamic>;
+            if (extra['result'] is SajuAnalysisResult) {
+              initialResult = extra['result'] as SajuAnalysisResult;
+            }
+            if (extra['userInfo'] is Map<String, String>) {
+              initialUserInfo = extra['userInfo'] as Map<String, String>;
+            }
+          }
+          
           return MySajuPage(
+            initialResult: initialResult,
+            initialUserInfo: initialUserInfo,
             onBack: () {
               if (fromProfile) {
                 // 더보기에서 왔으면 더보기로, 아니면 프로필로
@@ -247,25 +265,33 @@ class AppRouter {
       ),
       GoRoute(
         path: '/board',
-        builder: (context, state) => BoardPage(
-          isLoggedIn: _auth.isLoggedIn,
-          onNavigateToLogin: () => context.go('/login'),
-          onNavigateToWritePost: () => context.go('/write-post'),
-          onNavigateToMessages: () => context.go('/messages'),
-          onNavigateToFriends: () => context.go('/friends'),
-          onNavigateToOhangFire: () => context.go('/ohang/fire'),
-          onNavigateToOhangWater: () => context.go('/ohang/water'),
-          onNavigateToOhangWood: () => context.go('/ohang/wood'),
-          onNavigateToOhangMetal: () => context.go('/ohang/metal'),
-          onNavigateToOhangEarth: () => context.go('/ohang/earth'),
-          onOpenPost: (id) => context.go('/posts/$id'),
-        ),
+        builder: (context, state) {
+          final tab = state.uri.queryParameters['tab'];
+          return BoardPage(
+            isLoggedIn: _auth.isLoggedIn,
+            initialTab: tab == 'ohang' ? BoardCategory.ohang : BoardCategory.anonymous,
+            onNavigateToLogin: () => context.go('/login'),
+            onNavigateToWritePost: () => context.go('/write-post'),
+            onNavigateToMessages: () => context.go('/messages'),
+            onNavigateToFriends: () => context.go('/friends'),
+            onNavigateToOhangFire: () => context.go('/ohang/fire'),
+            onNavigateToOhangWater: () => context.go('/ohang/water'),
+            onNavigateToOhangWood: () => context.go('/ohang/wood'),
+            onNavigateToOhangMetal: () => context.go('/ohang/metal'),
+            onNavigateToOhangEarth: () => context.go('/ohang/earth'),
+            onOpenPost: (id) => context.go('/posts/$id'),
+          );
+        },
       ),
       GoRoute(
         path: '/posts/:postId',
         builder: (context, state) {
           final rawId = state.pathParameters['postId'];
           final postId = int.tryParse(rawId ?? '');
+          final fromParam = state.uri.queryParameters['from'];
+          final fromMyPosts = fromParam == 'my-posts';
+          final fromMore = state.uri.queryParameters['fromMore'] == 'true';
+          
           if (postId == null) {
             return BoardPage(
               isLoggedIn: _auth.isLoggedIn,
@@ -281,9 +307,28 @@ class AppRouter {
               onOpenPost: (id) => context.go('/posts/$id'),
             );
           }
+          
+          // 뒤로가기 경로 결정
+          void Function()? onBackCallback;
+          if (fromMyPosts) {
+            onBackCallback = () => context.go('/my-posts${fromMore ? '?fromMore=true' : ''}');
+          } else if (fromParam == 'ohang-fire') {
+            onBackCallback = () => context.go('/ohang/fire');
+          } else if (fromParam == 'ohang-water') {
+            onBackCallback = () => context.go('/ohang/water');
+          } else if (fromParam == 'ohang-wood') {
+            onBackCallback = () => context.go('/ohang/wood');
+          } else if (fromParam == 'ohang-metal') {
+            onBackCallback = () => context.go('/ohang/metal');
+          } else if (fromParam == 'ohang-earth') {
+            onBackCallback = () => context.go('/ohang/earth');
+          } else {
+            onBackCallback = () => context.go('/board');
+          }
+          
           return PostDetailPage(
             postId: postId,
-            onBack: () => context.go('/board'),
+            onBack: onBackCallback,
           );
         },
       ),
@@ -360,6 +405,7 @@ class AppRouter {
           final fromMore = state.uri.queryParameters['fromMore'] == 'true';
           
           return MyPostsPage(
+            fromMore: fromMore,
             onBack: () {
               // 더보기에서 왔으면 더보기로, 아니면 프로필로
               if (fromMore) {
@@ -391,7 +437,6 @@ class AppRouter {
                 context.go('/home');
               }
             },
-            onNavigateToMySaju: () => context.go('/my-saju?from=profile${fromMore ? '&fromMore=true' : ''}'),
             onNavigateToMyPosts: () => context.go('/my-posts${fromMore ? '?fromMore=true' : ''}'),
             onNavigateToAccountSettings: () => context.go('/account-settings${fromMore ? '?fromMore=true' : ''}'),
           );
@@ -424,50 +469,50 @@ class AppRouter {
         path: '/ohang/fire',
         builder: (context, state) => OhangFirePage(
           isLoggedIn: _auth.isLoggedIn,
-          onBack: () => context.go('/board'),
+          onBack: () => context.go('/board?tab=ohang'),
           onNavigateToLogin: () => context.go('/login'),
           onWritePost: () => context.go('/write-post'),
-          onOpenPost: (id) => context.go('/posts/$id'),
+          onOpenPost: (id) => context.go('/posts/$id?from=ohang-fire'),
         ),
       ),
       GoRoute(
         path: '/ohang/water',
         builder: (context, state) => OhangWaterPage(
           isLoggedIn: _auth.isLoggedIn,
-          onBack: () => context.go('/board'),
+          onBack: () => context.go('/board?tab=ohang'),
           onNavigateToLogin: () => context.go('/login'),
           onWritePost: () => context.go('/write-post'),
-          onOpenPost: (id) => context.go('/posts/$id'),
+          onOpenPost: (id) => context.go('/posts/$id?from=ohang-water'),
         ),
       ),
       GoRoute(
         path: '/ohang/wood',
         builder: (context, state) => OhangWoodPage(
           isLoggedIn: _auth.isLoggedIn,
-          onBack: () => context.go('/board'),
+          onBack: () => context.go('/board?tab=ohang'),
           onNavigateToLogin: () => context.go('/login'),
           onWritePost: () => context.go('/write-post'),
-          onOpenPost: (id) => context.go('/posts/$id'),
+          onOpenPost: (id) => context.go('/posts/$id?from=ohang-wood'),
         ),
       ),
       GoRoute(
         path: '/ohang/metal',
         builder: (context, state) => OhangMetalPage(
           isLoggedIn: _auth.isLoggedIn,
-          onBack: () => context.go('/board'),
+          onBack: () => context.go('/board?tab=ohang'),
           onNavigateToLogin: () => context.go('/login'),
           onWritePost: () => context.go('/write-post'),
-          onOpenPost: (id) => context.go('/posts/$id'),
+          onOpenPost: (id) => context.go('/posts/$id?from=ohang-metal'),
         ),
       ),
       GoRoute(
         path: '/ohang/earth',
         builder: (context, state) => OhangEarthPage(
           isLoggedIn: _auth.isLoggedIn,
-          onBack: () => context.go('/board'),
+          onBack: () => context.go('/board?tab=ohang'),
           onNavigateToLogin: () => context.go('/login'),
           onWritePost: () => context.go('/write-post'),
-          onOpenPost: (id) => context.go('/posts/$id'),
+          onOpenPost: (id) => context.go('/posts/$id?from=ohang-earth'),
         ),
       ),
     ],

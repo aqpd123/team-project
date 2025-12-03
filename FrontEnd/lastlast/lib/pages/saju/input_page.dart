@@ -88,12 +88,24 @@ class _SajuInputPageState extends State<SajuInputPage> {
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('사주 분석이 완료되었습니다. 나의 사주 페이지에서 확인할 수 있어요.')),
-      );
+      
+      // 사용자 정보 구성
+      final auth = AuthScope.of(context);
+      final userInfo = <String, String>{
+        'name': auth.user?.name ?? '사용자',
+        'birthDate': '${_birthDate!.year}-${_birthDate!.month.toString().padLeft(2, '0')}-${_birthDate!.day.toString().padLeft(2, '0')}',
+        'gender': _gender == 1 ? '남성' : '여성',
+        'userId': userId.toString(),
+      };
+      
+      // 데이터베이스 저장이 완료될 때까지 충분히 대기
+      await Future.delayed(const Duration(milliseconds: 1000));
 
-      // 나의 사주 페이지로 이동
-      context.go('/my-saju');
+      // 분석 결과를 바로 표시하기 위해 extra로 전달
+      context.go('/my-saju', extra: {
+        'result': result,
+        'userInfo': userInfo,
+      });
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

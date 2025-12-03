@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../controllers/community_controller.dart';
 import '../../models/community_post.dart';
@@ -59,6 +60,15 @@ class _OhangDetailPageState extends State<OhangDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    // 하단 단축키 투명도 방지
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        systemNavigationBarColor: Colors.black,
+        systemNavigationBarIconBrightness: Brightness.light,
+        systemNavigationBarDividerColor: Colors.transparent,
+      ),
+    );
+    
     if (!widget.isLoggedIn) {
       return _buildLoginRequired();
     }
@@ -72,54 +82,72 @@ class _OhangDetailPageState extends State<OhangDetailPage> {
             .toList();
         final filtered = posts.where(_matchesSearch).toList();
         return Scaffold(
-          body: MysticBackground(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _header(),
-                const SizedBox(height: 16),
-                _searchField(),
-                const SizedBox(height: 16),
-                if (community.error != null)
-                  _errorBanner(community.error!),
-                Expanded(
-                  child: community.isLoading && posts.isEmpty
-                      ? const Center(
-                          child: CircularProgressIndicator(),
-                        )
-                      : filtered.isEmpty
+          extendBody: true,
+          body: Stack(
+            children: [
+              MysticBackground(
+                child: SafeArea(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 16),
+                      _header(),
+                      const SizedBox(height: 16),
+                    _searchField(),
+                    const SizedBox(height: 16),
+                    if (community.error != null)
+                      _errorBanner(community.error!),
+                    Expanded(
+                      child: community.isLoading && posts.isEmpty
                           ? const Center(
-                              child: Text(
-                                '아직 게시글이 없습니다.',
-                                style:
-                                    TextStyle(color: Colors.white70),
-                              ),
+                              child: CircularProgressIndicator(),
                             )
-                          : RefreshIndicator(
-                              onRefresh: community.refreshPosts,
-                              child: ListView.separated(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 24),
-                                itemCount: filtered.length,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(height: 12),
-                                itemBuilder: (context, index) {
-                                  final post = filtered[index];
-                                  return PostCard(
-                                    title: post.title,
-                                    content: post.content,
-                                    author: post.authorLabel,
-                                    dateLabel: post.dateLabel,
-                                    likes: post.likeCount,
-                                    comments: post.commentCount,
-                                    onTap: () => widget.onOpenPost?.call(post.id),
-                                  );
-                                },
-                              ),
-                            ),
+                          : filtered.isEmpty
+                              ? const Center(
+                                  child: Text(
+                                    '아직 게시글이 없습니다.',
+                                    style:
+                                        TextStyle(color: Colors.white70),
+                                  ),
+                                )
+                              : RefreshIndicator(
+                                  onRefresh: community.refreshPosts,
+                                  child: ListView.separated(
+                                    padding:
+                                        const EdgeInsets.symmetric(horizontal: 24),
+                                    itemCount: filtered.length,
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(height: 12),
+                                    itemBuilder: (context, index) {
+                                      final post = filtered[index];
+                                      return PostCard(
+                                        title: post.title,
+                                        content: post.content,
+                                        author: post.authorLabel,
+                                        dateLabel: post.dateLabel,
+                                        likes: post.likeCount,
+                                        comments: post.commentCount,
+                                        onTap: () => widget.onOpenPost?.call(post.id),
+                                      );
+                                    },
+                                  ),
+                                ),
+                    ),
+                  ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+              // 하단 단축키 영역을 덮는 검정색 배경
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  height: MediaQuery.of(context).padding.bottom,
+                  color: Colors.black,
+                ),
+              ),
+            ],
           ),
         );
       },

@@ -224,7 +224,9 @@ class _FriendsPageState extends State<FriendsPage> {
         Center(
           child: Container(
             width: 400,
-            constraints: const BoxConstraints(maxHeight: 320),
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
@@ -241,79 +243,90 @@ class _FriendsPageState extends State<FriendsPage> {
                 ),
               ],
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      _avatar(friend.name),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            friend.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        _avatar(friend.name),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                friend.name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                              Text(
+                                friend.elementLabel,
+                                style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                              if (friend.email != null && friend.email!.isNotEmpty)
+                                Text(
+                                  friend.email!,
+                                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                            ],
                           ),
-                          Text(
-                            friend.elementLabel,
-                            style: const TextStyle(color: Colors.white70, fontSize: 12),
-                          ),
-                          if (friend.email != null && friend.email!.isNotEmpty)
-                            Text(
-                              friend.email!,
-                              style: const TextStyle(color: Colors.white54, fontSize: 11),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  _verticalModalButton(
-                    label: '쪽지 보내기',
-                    icon: Icons.mail_outline,
-                    color: const Color(0xFFFACC15),
-                    onTap: () {
-                      widget.onSendMessage?.call(friend);
-                      setState(() => _selected = null);
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  _verticalModalButton(
-                    label: '궁합 보기',
-                    icon: Icons.favorite_border,
-                    color: const Color(0xFF22D3EE),
-                    onTap: () {
-                      widget.onCheckCompatibility?.call(friend);
-                      setState(() => _selected = null);
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  _verticalModalButton(
-                    label: _removing ? '삭제 중...' : '친구 삭제',
-                    icon: Icons.person_remove_alt_1_outlined,
-                    color: const Color(0xFFFB7185),
-                    onTap: _removing ? null : () => _removeFriend(controller, friend),
-                  ),
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => setState(() => _selected = null),
-                      child: const Text(
-                        '닫기',
-                        style: TextStyle(color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _verticalModalButton(
+                      label: '쪽지 보내기',
+                      icon: Icons.mail_outline,
+                      color: const Color(0xFFFACC15),
+                      onTap: () {
+                        widget.onSendMessage?.call(friend);
+                        setState(() => _selected = null);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    _verticalModalButton(
+                      label: '궁합 보기',
+                      icon: Icons.favorite_border,
+                      color: const Color(0xFF22D3EE),
+                      onTap: () {
+                        widget.onCheckCompatibility?.call(friend);
+                        setState(() => _selected = null);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    _verticalModalButton(
+                      label: _removing ? '삭제 중...' : '친구 삭제',
+                      icon: Icons.person_remove_alt_1_outlined,
+                      color: const Color(0xFFFB7185),
+                      onTap: _removing ? null : () => _removeFriend(controller, friend),
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () => setState(() => _selected = null),
+                        child: const Text(
+                          '닫기',
+                          style: TextStyle(color: Colors.white70),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

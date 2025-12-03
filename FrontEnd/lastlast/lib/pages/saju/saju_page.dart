@@ -73,7 +73,7 @@ class SajuPage extends StatelessWidget {
                     _buildHeader(),
                     const SizedBox(height: 24),
                     _buildOptionButton(
-                      label: '사주보기',
+                      label: '사주 보기',
                       description: '나의 운명과 성격을 알아보세요',
                       emoji: '🌟',
                       gradientColors: const [
@@ -84,7 +84,7 @@ class SajuPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     _buildOptionButton(
-                      label: '사주궁합보기',
+                      label: '사주 궁합 보기',
                       description: '두 사람의 궁합을 확인해보세요',
                       emoji: '💕',
                       gradientColors: const [
@@ -125,7 +125,7 @@ class SajuPage extends StatelessWidget {
         Expanded(
           child: Center(
             child: const Text(
-              '사주보기 🔮',
+              '사주 보기 🔮',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 24,
