@@ -6,6 +6,7 @@ import '../../controllers/community_controller.dart';
 import '../../controllers/friend_controller.dart';
 import '../../models/comment_model.dart';
 import '../../models/community_post.dart';
+import '../../models/friend_models.dart';
 import '../../services/api_client.dart';
 import '../../shared/widgets/mystic_background.dart';
 
@@ -811,101 +812,120 @@ class _PostDetailPageState extends State<PostDetailPage> {
     final authorName = post.category == BoardCategory.anonymous
         ? '익명'
         : (post.authorName ?? '익명');
+    
+    // 친구 상태 확인 - AnimatedBuilder로 FriendController 상태 변화 감지
+    return AnimatedBuilder(
+      animation: FriendScope.of(context),
+      builder: (context, _) {
+        final friendController = FriendScope.of(context);
+        // 친구 목록이 로드되지 않았으면 로드 시도
+        if (friendController.friends.isEmpty && !friendController.isLoadingFriends) {
+          friendController.ensureLoaded();
+        }
+        final relationStatus = friendController.relationStatusFor(post.authorId);
+        final isFriend = relationStatus == FriendRelationStatus.friend;
 
-    return GestureDetector(
-      onTap: () => setState(() => _showAuthorModal = false),
-      child: Container(
-        color: Colors.black.withValues(alpha: 0.5),
-        child: Center(
-          child: GestureDetector(
-            onTap: () {}, // 모달 내부 클릭 시 닫히지 않도록
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    blurRadius: 20,
-                    spreadRadius: 5,
+        return GestureDetector(
+          onTap: () => setState(() => _showAuthorModal = false),
+          child: Container(
+            color: Colors.black.withValues(alpha: 0.5),
+            child: Center(
+              child: GestureDetector(
+                onTap: () {}, // 모달 내부 클릭 시 닫히지 않도록
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 20,
+                        spreadRadius: 5,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 오행 캐릭터 타입이 있으면 캐릭터 이미지, 없으면 기본 아바타
-                      post.authorCharacterType != null
-                          ? _buildAuthorAvatarModal(post.authorCharacterType!)
-                          : _avatar(authorName),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              authorName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                      Row(
+                        children: [
+                          // 오행 캐릭터 타입이 있으면 캐릭터 이미지, 없으면 기본 아바타
+                          post.authorCharacterType != null
+                              ? _buildAuthorAvatarModal(post.authorCharacterType!)
+                              : _avatar(authorName),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  authorName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      // 친구인 경우 비활성화된 버튼, 아닌 경우 신청 버튼
+                      _verticalModalButton(
+                        label: isFriend ? '이미 친구입니다' : '친구 신청',
+                        icon: isFriend ? Icons.check_circle_outline : Icons.person_add_outlined,
+                        color: isFriend 
+                            ? Colors.grey.withValues(alpha: 0.5) 
+                            : const Color(0xFFFACC15),
+                        onTap: isFriend 
+                            ? null 
+                            : (_sendingFriendRequest ? null : _sendFriendRequest),
+                        isLoading: _sendingFriendRequest,
+                      ),
+                      const SizedBox(height: 8),
+                      _verticalModalButton(
+                        label: '쪽지 보내기',
+                        icon: Icons.mail_outline,
+                        color: const Color(0xFF22D3EE),
+                        onTap: () {
+                          setState(() => _showAuthorModal = false);
+                          final isAnonymous =
+                              post.category == BoardCategory.anonymous;
+                          context.go(
+                            '/send-message',
+                            extra: {
+                              'name': authorName,
+                              'id': post.authorId,
+                              'isAnonymous': isAnonymous,
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () => setState(() => _showAuthorModal = false),
+                          child: const Text(
+                            '닫기',
+                            style: TextStyle(color: Colors.white70),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  _verticalModalButton(
-                    label: '친구 신청',
-                    icon: Icons.person_add_outlined,
-                    color: const Color(0xFFFACC15),
-                    onTap: _sendingFriendRequest ? null : _sendFriendRequest,
-                    isLoading: _sendingFriendRequest,
-                  ),
-                  const SizedBox(height: 8),
-                  _verticalModalButton(
-                    label: '쪽지 보내기',
-                    icon: Icons.mail_outline,
-                    color: const Color(0xFF22D3EE),
-                    onTap: () {
-                      setState(() => _showAuthorModal = false);
-                      final isAnonymous =
-                          post.category == BoardCategory.anonymous;
-                      context.go(
-                        '/send-message',
-                        extra: {
-                          'name': authorName,
-                          'id': post.authorId,
-                          'isAnonymous': isAnonymous,
-                        },
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => setState(() => _showAuthorModal = false),
-                      child: const Text(
-                        '닫기',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -1063,6 +1083,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
     VoidCallback? onTap,
     bool isLoading = false,
   }) {
+    final isDisabled = onTap == null && !isLoading;
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
@@ -1077,16 +1098,26 @@ class _PostDetailPageState extends State<PostDetailPage> {
             : Icon(icon, size: 14),
         label: Text(
           label,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+          style: TextStyle(
+            fontWeight: FontWeight.bold, 
+            fontSize: 11,
+            color: isDisabled ? Colors.white70 : Colors.white,
+          ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.white,
+          backgroundColor: isDisabled 
+              ? color.withValues(alpha: 0.3) 
+              : color,
+          foregroundColor: isDisabled 
+              ? Colors.white70 
+              : Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 4,
-          shadowColor: color.withValues(alpha: 0.4),
+          elevation: isDisabled ? 0 : 4,
+          shadowColor: isDisabled 
+              ? Colors.transparent 
+              : color.withValues(alpha: 0.4),
         ),
       ),
     );

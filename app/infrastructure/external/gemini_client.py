@@ -540,6 +540,121 @@ class GeminiClient:
         except Exception as e:
             print(f"⚠️ Gemini API 개인 사주 분석 실패: {e}")
             return None
+    
+    def generate_compatibility_advice(
+        self,
+        person1_name: str,
+        person2_name: str,
+        scores: Dict[str, float],
+        insights: Dict[str, str],
+        user_element: Optional[str] = None,
+        celebrity_element: Optional[str] = None,
+    ) -> Optional[str]:
+        """
+        일반 궁합 분석을 위한 관계 발전 조언 생성
+        
+        Args:
+            person1_name: 첫 번째 사람 이름
+            person2_name: 두 번째 사람 이름
+            scores: 궁합 점수
+            insights: 카테고리별 인사이트 딕셔너리
+            user_element: 첫 번째 사람 오행 (한자 포함, 예: "목(木)")
+            celebrity_element: 두 번째 사람 오행 (한자 포함, 예: "화(火)")
+        
+        Returns:
+            생성된 조언 문자열, 실패 시 None
+        """
+        if not self._initialized:
+            return None
+        
+        try:
+            model = genai.GenerativeModel('gemini-2.0-flash')
+            
+            final_score = scores.get("final", 0.0)
+            
+            # 인사이트 요약
+            insights_summary = "\n".join(
+                [f"- {category}: {insight}" for category, insight in insights.items()]
+            )
+            
+            prompt = f"""당신은 한국 전통 사주 명리학 전문가입니다. 
+다음 정보를 바탕으로 {person1_name}님과 {person2_name}님의 관계 발전을 위한 조언을 작성해주세요.
+
+첫 번째 사람: {person1_name}
+두 번째 사람: {person2_name}
+첫 번째 사람 오행: {user_element or "알 수 없음"}
+두 번째 사람 오행: {celebrity_element or "알 수 없음"}
+궁합 점수: {final_score:.1f}점
+
+카테고리별 궁합 분석:
+{insights_summary}
+
+요구사항:
+1. 관계 발전을 위한 구체적이고 실용적인 조언을 제공할 것
+2. 연애, 우정, 직장 등 다양한 관계 영역에서 도움이 될 수 있는 조언 포함
+3. 정확히 4줄 정도, 총 200-250자 이내로 작성할 것
+4. 말투는 "~해요", "~예요", "~이에요" 형태의 부드러운 존댓말로 통일할 것
+5. 제목, 소제목, 불릿포인트, 마크다운은 사용하지 말고 순수한 본문 문장만 작성할 것
+6. 이모지는 사용하지 말 것
+7. 각 문장은 완전한 문장으로 끝내고, 중간에 끊기지 않게 할 것
+8. 구체적인 행동 지시나 조언을 포함할 것 (예: "~해보세요", "~하는 것이 좋아요")
+
+관계 발전을 위한 조언:"""
+            
+            generation_config = genai.types.GenerationConfig(
+                max_output_tokens=150,  # 4줄 분량을 위해 증가 (약 250자)
+                temperature=0.7,
+            )
+            
+            response = model.generate_content(
+                prompt,
+                generation_config=generation_config,
+            )
+            advice = response.text.strip()
+            
+            # 문장이 중간에 끊기지 않도록 처리
+            if advice:
+                import re
+                
+                complete_parts = []
+                parts = re.split(r'([.!?])', advice)
+                
+                for i in range(0, len(parts) - 1, 2):
+                    if i + 1 < len(parts):
+                        sentence = parts[i] + parts[i + 1]
+                        complete_parts.append(sentence)
+                
+                if not complete_parts:
+                    for ending in ['니다', '요', '다']:
+                        idx = advice.rfind(ending)
+                        if idx >= 0:
+                            after_ending = idx + len(ending)
+                            if after_ending >= len(advice):
+                                complete_parts.append(advice)
+                                break
+                            elif advice[after_ending] in [' ', '.', '!', '?', '\n']:
+                                complete_parts.append(advice[:after_ending])
+                                break
+                
+                if complete_parts:
+                    # 4줄 분량이므로 최대 5문장까지 허용
+                    if len(complete_parts) > 5:
+                        complete_parts = complete_parts[:5]
+                    advice = ''.join(complete_parts).strip()
+                elif len(advice) > 300:
+                    # 250자 정도로 제한하되, 문장이 중간에 끊기지 않도록 처리
+                    for i in range(min(300, len(advice) - 1), max(0, len(advice) - 30), -1):
+                        if advice[i] in [' ', '은', '는', '이', '가', '을', '를', '에', '의', '로', '으로']:
+                            advice = advice[:i].strip()
+                            break
+                    else:
+                        advice = advice[:300].strip()
+            
+            return advice
+            
+        except Exception as e:
+            print(f"⚠️ Gemini API 관계 발전 조언 생성 실패: {e}")
+            return None
 
 
 # 싱글톤 인스턴스

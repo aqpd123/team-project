@@ -287,17 +287,17 @@ class FriendController extends ChangeNotifier {
     final raw = (value as String?)?.toLowerCase();
     switch (raw) {
       case 'fire':
-        return '화의 사람';
+        return '화(火)';
       case 'water':
-        return '수의 사람';
+        return '수(水)';
       case 'wood':
-        return '목의 사람';
+        return '목(木)';
       case 'metal':
-        return '금의 사람';
+        return '금(金)';
       case 'earth':
-        return '토의 사람';
+        return '토(土)';
       default:
-        return '화의 사람';
+        return '화(火)';
     }
   }
 

@@ -84,6 +84,8 @@ class SajuCompatibilitySchema(BaseSchema):
     saju2 = fields.Nested(SajuSchema, required=True)
     gender1 = fields.Int(load_default=0, validate=validate.OneOf([0, 1]))
     gender2 = fields.Int(load_default=0, validate=validate.OneOf([0, 1]))
+    person1_name = fields.Str(load_default=None, allow_none=True)
+    person2_name = fields.Str(load_default=None, allow_none=True)
 
 
 class CelebrityCompatibilitySchema(BaseSchema):
@@ -109,6 +111,8 @@ class SajuBirthCompatibilitySchema(BaseSchema):
     birth2 = fields.Nested(SajuBirthSchema, required=True)
     gender1 = fields.Int(load_default=0, validate=validate.OneOf([0, 1]))
     gender2 = fields.Int(load_default=0, validate=validate.OneOf([0, 1]))
+    person1_name = fields.Str(load_default=None, allow_none=True)
+    person2_name = fields.Str(load_default=None, allow_none=True)
 
 
 def _flatten_errors(messages: Dict[str, Any], prefix: str = "") -> List[str]:

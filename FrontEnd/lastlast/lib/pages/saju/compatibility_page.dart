@@ -323,6 +323,8 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
       // 남성 = 1, 여성 = 0 으로 전송
       gender1: _gender1 == '남성' ? 1 : 0,
       gender2: _gender2 == '남성' ? 1 : 0,
+      person1Name: _nameCtrl1.text.trim().isNotEmpty ? _nameCtrl1.text.trim() : null,
+      person2Name: _nameCtrl2.text.trim().isNotEmpty ? _nameCtrl2.text.trim() : null,
     );
     setState(() {
       _isSubmitting = true;
@@ -349,6 +351,13 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
   }
 
   void _handleResultBack() {
+    // 친구와의 궁합인 경우 친구창으로 바로 이동
+    if (widget.friendData != null && widget.onBack != null) {
+      widget.onBack!();
+      return;
+    }
+    
+    // 일반 궁합인 경우 입력 화면으로 돌아가기
     setState(() {
       _showResult = false;
       _result = null;
@@ -880,22 +889,17 @@ class CompatibilityResultView extends StatelessWidget {
                             const SizedBox(height: 16),
                             _buildAnalysisCard(
                               title: '💖 연애 궁합',
-                              description:
-                                  '두 분은 서로의 감정을 잘 이해하고 공감하는 능력이 뛰어납니다. '
-                                  '서로 다른 성격이지만 그것이 오히려 매력으로 작용하여 좋은 관계를 유지할 수 있어요.',
+                              description: _getInsightDescription('연애'),
                             ),
                             const SizedBox(height: 12),
                             _buildAnalysisCard(
                               title: '🤝 우정 궁합',
-                              description:
-                                  '평생 친구로 지낼 수 있는 좋은 궁합입니다. 서로를 믿고 의지하며, '
-                                  '어려운 일이 있을 때 힘이 되어줄 수 있는 관계예요.',
+                              description: _getInsightDescription('우정'),
                             ),
                             const SizedBox(height: 12),
                             _buildAnalysisCard(
-                              title: '💼 사업 궁합',
-                              description: '서로의 장점을 살려 시너지를 낼 수 있는 관계입니다. '
-                                  '한 분은 아이디어를, 다른 분은 실행력을 담당하면 좋은 결과를 얻을 수 있어요.',
+                              title: '💼 직장 궁합',
+                              description: _getInsightDescription('직장'),
                             ),
                             const SizedBox(height: 16),
                             _buildAdviceCard(),
@@ -987,6 +991,24 @@ class CompatibilityResultView extends StatelessWidget {
         const SizedBox(width: 48),
       ],
     );
+  }
+
+  String _getInsightDescription(String category) {
+    // AI 생성 인사이트가 있으면 사용
+    if (result.insights.containsKey(category)) {
+      return result.insights[category]!;
+    }
+    // 기본 설명 (fallback)
+    switch (category) {
+      case '연애':
+        return '두 분은 서로의 감정을 잘 이해하고 공감하는 능력이 뛰어납니다. 서로 다른 성격이지만 그것이 오히려 매력으로 작용하여 좋은 관계를 유지할 수 있어요.';
+      case '우정':
+        return '평생 친구로 지낼 수 있는 좋은 궁합입니다. 서로를 믿고 의지하며, 어려운 일이 있을 때 힘이 되어줄 수 있는 관계예요.';
+      case '직장':
+        return '서로의 장점을 살려 시너지를 낼 수 있는 관계입니다. 한 분은 아이디어를, 다른 분은 실행력을 담당하면 좋은 결과를 얻을 수 있어요.';
+      default:
+        return '이 카테고리에 대한 설명은 아직 준비되지 않았습니다.';
+    }
   }
 
   Widget _buildScoreCard() {
@@ -1133,6 +1155,11 @@ class CompatibilityResultView extends StatelessWidget {
   }
 
   Widget _buildAdviceCard() {
+    // AI 생성 조언이 있으면 사용, 없으면 기본 조언
+    final adviceText = result.advice.isNotEmpty
+        ? result.advice
+        : '서로의 차이점을 인정하고 존중하는 것이 중요합니다. 소통을 자주 하고 서로의 의견을 경청하는 자세를 유지하세요. 공통 관심사를 찾아 함께 즐기는 시간을 가지면 관계가 더욱 깊어질 수 있어요.';
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(22),
@@ -1149,8 +1176,8 @@ class CompatibilityResultView extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Text(
+        children: [
+          const Text(
             '✨ 관계 발전을 위한 조언',
             style: TextStyle(
               color: Colors.white,
@@ -1158,11 +1185,10 @@ class CompatibilityResultView extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
-            '서로의 차이점을 인정하고 존중하는 것이 중요합니다. '
-            '소통을 자주 하고 서로의 의견을 경청하는 자세를 유지하세요.',
-            style: TextStyle(color: Colors.white, fontSize: 14, height: 1.6),
+            adviceText,
+            style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.6),
           ),
         ],
       ),

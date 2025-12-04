@@ -138,6 +138,8 @@ class _SajuInputPageState extends State<SajuInputPage> {
           ),
           gender1: _gender,
           gender2: friendGender,
+          person1Name: auth.user?.name,
+          person2Name: widget.friendData!.name,
         );
 
         final compatibilityResult =

@@ -24,7 +24,7 @@ class AppBottomNavigationBar extends StatelessWidget {
         path: '/board',
         icon: Icons.chat_bubble_outline,
         activeIcon: Icons.chat_bubble,
-        label: '게시판',
+        label: '커뮤니티',
       ),
       _NavItem(
         path: '/more',

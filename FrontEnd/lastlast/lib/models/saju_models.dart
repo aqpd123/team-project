@@ -53,18 +53,24 @@ class SajuBirthCompatibilityRequest {
     required this.person2,
     this.gender1 = 0,
     this.gender2 = 0,
+    this.person1Name,
+    this.person2Name,
   });
 
   final SajuBirthInfo person1;
   final SajuBirthInfo person2;
   final int gender1;
   final int gender2;
+  final String? person1Name;
+  final String? person2Name;
 
   Map<String, dynamic> toJson() => {
         'birth1': person1.toJson(),
         'birth2': person2.toJson(),
         'gender1': gender1,
         'gender2': gender2,
+        if (person1Name != null) 'person1_name': person1Name,
+        if (person2Name != null) 'person2_name': person2Name,
       };
 }
 
@@ -136,6 +142,8 @@ class SajuCompatibilityResult {
     required this.details,
     required this.saju1,
     required this.saju2,
+    this.insights = const {},
+    this.advice = '',
   });
 
   final double original;
@@ -144,6 +152,8 @@ class SajuCompatibilityResult {
   final Map<String, dynamic> details;
   final Map<String, String> saju1;
   final Map<String, String> saju2;
+  final Map<String, String> insights; // AI 생성 인사이트 (연애, 우정, 직장)
+  final String advice; // AI 생성 관계 발전 조언
 
   factory SajuCompatibilityResult.fromJson(Map<String, dynamic> json) {
     Map<String, String> toStringMap(dynamic raw) {
@@ -154,6 +164,18 @@ class SajuCompatibilityResult {
       }
       return {};
     }
+    
+    // insights 파싱
+    Map<String, String> insightsMap = {};
+    if (json['insights'] is Map<String, dynamic>) {
+      final insightsRaw = json['insights'] as Map<String, dynamic>;
+      insightsMap = insightsRaw.map(
+        (key, value) => MapEntry(key, value?.toString() ?? ''),
+      );
+    }
+    
+    // advice 파싱
+    final advice = (json['advice'] ?? '') as String;
 
     return SajuCompatibilityResult(
       original: (json['original'] ?? 0).toDouble(),
@@ -162,6 +184,8 @@ class SajuCompatibilityResult {
       details: (json['details'] as Map<String, dynamic>? ?? const {}),
       saju1: toStringMap(json['saju1']),
       saju2: toStringMap(json['saju2']),
+      insights: insightsMap,
+      advice: advice,
     );
   }
 }
