@@ -39,3 +39,8 @@ def celebrity_compatibility(celebrity_id: int):
         return jsonify({"error": str(e)}), 400
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        import traceback
+        print(f"❌ Celebrity compatibility 오류: {e}")
+        traceback.print_exc()
+        return jsonify({"error": f"서버 오류가 발생했습니다: {str(e)}"}), 500

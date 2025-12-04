@@ -30,6 +30,7 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
   bool _isLoading = true;
   Map<String, dynamic>? _compatibilityResult;
   String? _error;
+  Map<String, String>? _insights;
 
   @override
   void initState() {
@@ -97,6 +98,10 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
       if (mounted) {
         setState(() {
           _compatibilityResult = result;
+          // AI 생성 인사이트가 있으면 사용
+          if (result['insights'] is Map) {
+            _insights = Map<String, String>.from(result['insights'] as Map);
+          }
           _isLoading = false;
         });
       }
@@ -139,31 +144,31 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
                         child: Column(
                           children: [
                             _buildCompatibilityScore(),
-                            const SizedBox(height: 16),
-                            _buildInsightCard(
-                              title: '연애 궁합',
-                              emoji: '💕',
-                              description:
-                                  '${widget.celebrity.name}님과는 서로의 감정을 섬세하게 공감할 수 있어요. 감성적인 면이 잘 맞아 부드러운 관계가 기대됩니다.',
-                            ),
-                            const SizedBox(height: 12),
-                            _buildInsightCard(
-                              title: '우정 궁합',
-                              emoji: '🤝',
-                              description:
-                                  '같은 목표를 향해 나아갈 때 협력 관계가 빛을 발합니다. 진솔한 대화를 자주 나누면 서로에게 든든한 친구가 되어줄 수 있어요.',
-                            ),
-                            const SizedBox(height: 12),
-                            _buildInsightCard(
-                              title: '사업 궁합',
-                              emoji: '💼',
-                              description:
-                                  '서로 다른 장점을 적절히 분담하면 시너지가 큽니다. ${widget.celebrity.profession} 특유의 창의력이 큰 영감을 줄 수 있어요.',
-                            ),
-                            const SizedBox(height: 16),
-                            _buildAdviceCard(),
-                            const SizedBox(height: 24),
-                            _buildActionButton(),
+                            // 로딩 중이 아니고 에러가 없을 때만 인사이트 카드 표시
+                            if (!_isLoading && _error == null) ...[
+                              const SizedBox(height: 16),
+                              _buildInsightCard(
+                                title: '연애 궁합',
+                                emoji: '💕',
+                                description: _getInsightDescription('연애'),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildInsightCard(
+                                title: '우정 궁합',
+                                emoji: '🤝',
+                                description: _getInsightDescription('우정'),
+                              ),
+                              const SizedBox(height: 12),
+                              _buildInsightCard(
+                                title: '직장 궁합',
+                                emoji: '💼',
+                                description: _getInsightDescription('직장'),
+                              ),
+                              const SizedBox(height: 16),
+                              _buildAdviceCard(),
+                              const SizedBox(height: 24),
+                              _buildActionButton(),
+                            ],
                           ],
                         ),
                       ),
@@ -562,6 +567,25 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
         ),
       ),
     );
+  }
+
+  String _getInsightDescription(String category) {
+    // AI 생성 인사이트가 있으면 사용
+    if (_insights != null && _insights!.containsKey(category)) {
+      return _insights![category]!;
+    }
+    
+    // 기본 설명 (fallback)
+    switch (category) {
+      case '연애':
+        return '${widget.celebrity.name}님과는 서로의 감정을 섬세하게 공감할 수 있어요. 감성적인 면이 잘 맞아 부드러운 관계가 기대됩니다.';
+      case '우정':
+        return '같은 목표를 향해 나아갈 때 협력 관계가 빛을 발합니다. 진솔한 대화를 자주 나누면 서로에게 든든한 친구가 되어줄 수 있어요.';
+      case '직장':
+        return '서로의 장점을 살려 시너지를 낼 수 있는 관계입니다. 업무에서도 좋은 파트너가 될 수 있어요.';
+      default:
+        return '좋은 관계를 유지할 수 있어요.';
+    }
   }
 
   Widget _circleButton({required IconData icon, VoidCallback? onTap}) {

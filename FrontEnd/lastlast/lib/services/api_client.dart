@@ -7,7 +7,7 @@ const String defaultApiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
   // 에뮬레이터: http://10.0.2.2:5000
   // 실제 기기 (WiFi 디버깅): PC의 IP 주소 사용 (예: http://192.168.0.7:5000)
-  defaultValue: 'http://192.168.0.5:5000',
+  defaultValue: 'http://192.168.0.7:5000',
 );
 
 class ApiException implements Exception {

@@ -17,6 +17,7 @@ class Config:
         "LUNAR_API_KEY",
         "72033766be7ee41338af559f9e99138d77c3f29be234bd231e5b88414aff05ea",
     )
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     MODEL_DIR: str = os.getenv("MODEL_DIR", str(BASE_DIR / "source"))
 
 

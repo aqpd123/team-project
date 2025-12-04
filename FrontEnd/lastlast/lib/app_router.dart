@@ -190,7 +190,7 @@ class AppRouter {
           return CelebrityResultPage(
             celebrity: celebrity,
             onBack: () => context.go('/celebrity-saju'),
-            onStartCompatibility: () => context.go('/saju/compatibility'),
+            onStartCompatibility: () => context.go('/celebrity-saju'),
           );
         },
       ),

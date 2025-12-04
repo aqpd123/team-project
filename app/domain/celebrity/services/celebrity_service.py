@@ -7,6 +7,7 @@ from app.domain.saju_core.saju_calculator import SajuCalculator
 from app.domain.saju_core.data_validator import DataValidator
 from app.domain.saju_core.personality_analyzer import PersonalityAnalyzer
 from app.domain.saju_core.character_system import CharacterSystem
+from app.infrastructure.external.gemini_client import get_gemini_client
 
 
 class CelebrityService:
@@ -35,6 +36,7 @@ class CelebrityService:
         user_saju: Dict[str, str],
         celebrity_id: int,
         user_gender: int = 0,
+        use_ai: bool = True,
     ) -> Dict[str, Any]:
         celeb = self._require_celebrity(celebrity_id)
         scores = self.calculator.calculate_compatibility(
@@ -43,10 +45,57 @@ class CelebrityService:
             gender1=user_gender,
             gender2=celeb.gender,
         )
+        
+        # 점수 아래 설명은 항상 기본 설명 사용 (AI 사용 안 함)
+        description = self._describe(scores["final"])
+        
+        # 카테고리별 인사이트는 AI로 생성 시도 (use_ai가 True인 경우만)
+        insights = {}
+        
+        if use_ai:
+            try:
+                gemini = get_gemini_client()
+                celeb_summary = self._celebrity_summary(celeb)
+                user_element = self.calculator.determine_character_type(user_saju)
+                user_element_kr = {
+                    "wood": "목", "fire": "화", "earth": "토",
+                    "metal": "금", "water": "수"
+                }.get(user_element, "알 수 없음")
+                
+                # 카테고리별 인사이트 생성
+                for category in ["연애", "우정", "직장"]:
+                    try:
+                        insight = gemini.generate_insight_description(
+                            category=category,
+                            celebrity_name=celeb.name,
+                            scores=scores,
+                            user_element=user_element_kr,
+                            celebrity_element=celeb_summary.get("element"),
+                        )
+                        if insight:
+                            insights[category] = insight
+                    except Exception as e:
+                        print(f"⚠️ 인사이트 생성 실패 ({category}): {e}")
+                        continue
+            except Exception as e:
+                print(f"⚠️ AI 인사이트 생성 실패: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        # 기본 인사이트 (AI가 실패한 경우)
+        if not insights:
+            celeb_name = celeb.name
+            insights = {
+                "연애": f'{celeb_name}님과는 서로의 감정을 섬세하게 공감할 수 있어요. 감성적인 면이 잘 맞아 부드러운 관계가 기대됩니다.',
+                "우정": '같은 목표를 향해 나아갈 때 협력 관계가 빛을 발합니다. 진솔한 대화를 자주 나누면 서로에게 든든한 친구가 되어줄 수 있어요.',
+                "직장": '서로의 장점을 살려 시너지를 낼 수 있는 관계입니다. 업무에서도 좋은 파트너가 될 수 있어요.',
+            }
+        
         return {
             "celebrity": self._celebrity_summary(celeb),
             "scores": scores,
-            "description": self._describe(scores["final"]),
+            "description": description,
+            "insights": insights,
         }
 
     def get_compatibility_description(self, scores: Dict[str, float]) -> str:
