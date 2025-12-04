@@ -31,6 +31,7 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
   Map<String, dynamic>? _compatibilityResult;
   String? _error;
   Map<String, String>? _insights;
+  String? _elementRelationship;
 
   @override
   void initState() {
@@ -45,6 +46,12 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
 
   Future<void> _loadCompatibility() async {
     if (!mounted) return;
+
+    // 로딩 상태 초기화
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
     try {
       final auth = AuthScope.of(context);
@@ -102,6 +109,8 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
           if (result['insights'] is Map) {
             _insights = Map<String, String>.from(result['insights'] as Map);
           }
+          // 오행 궁합 관계 저장
+          _elementRelationship = result['element_relationship'] as String?;
           _isLoading = false;
         });
       }
@@ -147,6 +156,8 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
                             // 로딩 중이 아니고 에러가 없을 때만 인사이트 카드 표시
                             if (!_isLoading && _error == null) ...[
                               const SizedBox(height: 16),
+                              _buildElementRelationshipCard(),
+                              const SizedBox(height: 12),
                               _buildInsightCard(
                                 title: '연애 궁합',
                                 emoji: '💕',
@@ -331,25 +342,7 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
                 ),
               ),
               const SizedBox(width: 8),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border:
-                      Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                ),
-                child: Text(
-                  widget.celebrity.element,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-              ),
+              _buildElementIcon(widget.celebrity.element),
             ],
           ),
         );
@@ -479,6 +472,103 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
     );
   }
 
+  Widget _buildElementIcon(String element) {
+    // 오행별 아이콘 매핑
+    final elementIcons = {
+      '목': Icons.eco,
+      '화': Icons.local_fire_department,
+      '토': Icons.landscape,
+      '금': Icons.diamond,
+      '수': Icons.water_drop,
+    };
+
+    final elementColors = {
+      '목': const Color(0xFF4CAF50),
+      '화': const Color(0xFFFF5722),
+      '토': const Color(0xFFFFC107),
+      '금': const Color(0xFFFFD700),
+      '수': const Color(0xFF2196F3),
+    };
+
+    final icon = elementIcons[element] ?? Icons.help_outline;
+    final color = elementColors[element] ?? Colors.white;
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
+      ),
+      child: Icon(
+        icon,
+        color: color,
+        size: 20,
+      ),
+    );
+  }
+
+  Widget _buildElementRelationshipCard() {
+    final relationship = _elementRelationship ?? '오행 궁합 정보를 불러올 수 없어요.';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: const Color(0xFFFACC15).withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFACC15).withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.auto_awesome,
+              color: Color(0xFFFACC15),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '오행 궁합',
+                  style: TextStyle(
+                    color: Color(0xFFFACC15),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  relationship,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildInsightCard({
     required String title,
     required String emoji,
@@ -513,37 +603,9 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
   }
 
   Widget _buildAdviceCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFF472B6), Color(0xFF8B5CF6)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(32),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Text(
-            '✨ 더욱 가까워지는 팁',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            '공통 관심사를 함께 즐기고 솔직한 대화를 자주 나눠보세요. '
-            '자연스럽게 신뢰를 쌓을 수 있어요.',
-            style: TextStyle(color: Colors.white, height: 1.6),
-          ),
-        ],
-      ),
-    );
+    // 요구 사항에 따라 사주 전반 분석 카드는 제거되었습니다.
+    // 레이아웃 유지를 위해 빈 위젯을 반환합니다.
+    return const SizedBox.shrink();
   }
 
   Widget _buildActionButton() {
@@ -574,7 +636,7 @@ class _CelebrityResultPageState extends State<CelebrityResultPage> {
     if (_insights != null && _insights!.containsKey(category)) {
       return _insights![category]!;
     }
-    
+
     // 기본 설명 (fallback)
     switch (category) {
       case '연애':

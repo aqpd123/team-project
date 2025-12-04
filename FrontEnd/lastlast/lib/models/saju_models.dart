@@ -76,6 +76,7 @@ class SajuAnalysisResult {
     required this.flags,
     required this.report,
     required this.saju,
+    this.aiSummary = '',
   });
 
   final String character;
@@ -84,6 +85,7 @@ class SajuAnalysisResult {
   final List<String> flags;
   final String report;
   final Map<String, String> saju;
+  final String aiSummary; // Gemini로 생성한 개인 사주 전반 분석 요약
 
   factory SajuAnalysisResult.fromJson(Map<String, dynamic> json) {
     Map<String, double> toDoubleMap(dynamic raw) {
@@ -106,6 +108,12 @@ class SajuAnalysisResult {
       return {};
     }
 
+    // ai_summary 파싱 (null 체크 및 타입 변환)
+    final aiSummaryRaw = json['ai_summary'];
+    final aiSummary = aiSummaryRaw != null 
+        ? (aiSummaryRaw is String ? aiSummaryRaw : aiSummaryRaw.toString())
+        : '';
+
     return SajuAnalysisResult(
       character: (json['character'] ?? '') as String,
       fiveElements: toDoubleMap(json['five']),
@@ -115,6 +123,7 @@ class SajuAnalysisResult {
           .toList(),
       report: (json['report'] ?? '') as String,
       saju: toStringMap(json['saju']),
+      aiSummary: aiSummary,
     );
   }
 }

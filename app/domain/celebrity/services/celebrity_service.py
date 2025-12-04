@@ -91,11 +91,18 @@ class CelebrityService:
                 "직장": '서로의 장점을 살려 시너지를 낼 수 있는 관계입니다. 업무에서도 좋은 파트너가 될 수 있어요.',
             }
         
+        # 오행 궁합 관계 설명 생성
+        element_relationship = self._get_element_relationship(
+            user_element_kr,
+            celeb_summary.get("element", "알 수 없음")
+        )
+        
         return {
             "celebrity": self._celebrity_summary(celeb),
             "scores": scores,
             "description": description,
             "insights": insights,
+            "element_relationship": element_relationship,
         }
 
     def get_compatibility_description(self, scores: Dict[str, float]) -> str:
@@ -133,3 +140,52 @@ class CelebrityService:
         if final_score >= 55:
             return "보통 수준의 궁합입니다. 배려와 대화가 중요합니다."
         return "다소 어려운 궁합입니다. 차이를 이해하고 조율하는 노력이 필요합니다."
+    
+    def _get_element_relationship(self, user_element: str, celebrity_element: str) -> str:
+        """오행 상생/상극 관계를 한 줄로 설명"""
+        element_map = {
+            "목": "목(木)",
+            "화": "화(火)",
+            "토": "토(土)",
+            "금": "금(金)",
+            "수": "수(水)",
+        }
+        
+        user_elem = element_map.get(user_element, user_element)
+        celeb_elem = element_map.get(celebrity_element, celebrity_element)
+        
+        # 상생 관계: 목생화, 화생토, 토생금, 금생수, 수생목
+        # 상극 관계: 목극토, 토극수, 수극화, 화극금, 금극목
+        relationships = {
+            ("목", "화"): "상생",
+            ("화", "토"): "상생",
+            ("토", "금"): "상생",
+            ("금", "수"): "상생",
+            ("수", "목"): "상생",
+            ("목", "토"): "상극",
+            ("토", "수"): "상극",
+            ("수", "화"): "상극",
+            ("화", "금"): "상극",
+            ("금", "목"): "상극",
+        }
+        
+        # 같은 오행
+        if user_element == celebrity_element:
+            return f"{user_elem}과 {celeb_elem}은 같은 오행으로 서로를 보완하는 관계예요."
+        
+        # 상생/상극 관계 확인
+        relationship = relationships.get((user_element, celebrity_element))
+        if relationship == "상생":
+            return f"{user_elem}과 {celeb_elem}은 상생 관계로 서로를 돕고 키워주는 관계예요."
+        elif relationship == "상극":
+            return f"{user_elem}과 {celeb_elem}은 상극 관계로 서로를 제어하지만 균형을 이루는 관계예요."
+        
+        # 역방향 확인
+        reverse_relationship = relationships.get((celebrity_element, user_element))
+        if reverse_relationship == "상생":
+            return f"{celeb_elem}과 {user_elem}은 상생 관계로 서로를 돕고 키워주는 관계예요."
+        elif reverse_relationship == "상극":
+            return f"{celeb_elem}과 {user_elem}은 상극 관계로 서로를 제어하지만 균형을 이루는 관계예요."
+        
+        # 알 수 없는 경우
+        return f"{user_elem}과 {celeb_elem}의 오행 관계예요."

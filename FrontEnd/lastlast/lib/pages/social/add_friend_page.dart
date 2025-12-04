@@ -226,16 +226,7 @@ class _SearchResultTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 26,
-            backgroundColor: const Color(0xFFFACC15).withValues(alpha: 0.7),
-            child: Text(
-              result.name.isEmpty
-                  ? '?'
-                  : String.fromCharCode(result.name.runes.first).toUpperCase(),
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-          ),
+          _buildAvatar(result.name, result.characterType),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -299,6 +290,51 @@ class _SearchResultTile extends StatelessWidget {
       child: Text(
         label,
         style: const TextStyle(color: Colors.white70, fontSize: 12),
+      ),
+    );
+  }
+
+  Widget _buildAvatar(String name, String? characterType) {
+    // 오행에 따른 이미지 파일명 매핑
+    final characterImageMap = {
+      'wood': 'assets/tree.png',
+      'fire': 'assets/fire.png',
+      'earth': 'assets/land.png',
+      'metal': 'assets/gold.png',
+      'water': 'assets/water.png',
+    };
+
+    final imagePath = characterType != null
+        ? characterImageMap[characterType.toLowerCase()]
+        : null;
+
+    if (imagePath != null) {
+      return ClipOval(
+        child: Image.asset(
+          imagePath,
+          width: 52,
+          height: 52,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildFallbackAvatar(name);
+          },
+        ),
+      );
+    }
+
+    return _buildFallbackAvatar(name);
+  }
+
+  Widget _buildFallbackAvatar(String name) {
+    final text = name.isEmpty
+        ? '?'
+        : String.fromCharCode(name.runes.first).toUpperCase();
+    return CircleAvatar(
+      radius: 26,
+      backgroundColor: const Color(0xFFFACC15).withValues(alpha: 0.7),
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
       ),
     );
   }

@@ -31,6 +31,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
   bool _deleting = false;
   String? _error;
   final _commentCtrl = TextEditingController();
+  final _commentFocusNode = FocusNode();
+  final _scrollController = ScrollController();
+  final _commentInputKey = GlobalKey();
   bool _showAuthorModal = false;
   bool _sendingFriendRequest = false;
   bool _showDeleteDialog = false;
@@ -39,12 +42,32 @@ class _PostDetailPageState extends State<PostDetailPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    // 댓글 입력 필드 포커스 변경 시 스크롤
+    _commentFocusNode.addListener(_onCommentFocusChanged);
   }
 
   @override
   void dispose() {
     _commentCtrl.dispose();
+    _commentFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onCommentFocusChanged() {
+    if (_commentFocusNode.hasFocus) {
+      // 키보드가 올라온 후 스크롤
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_commentInputKey.currentContext != null) {
+          Scrollable.ensureVisible(
+            _commentInputKey.currentContext!,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            alignment: 0.1, // 입력 필드가 화면 하단 10% 위치에 오도록
+          );
+        }
+      });
+    }
   }
 
   Future<void> _load() async {
@@ -238,6 +261,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                                 : RefreshIndicator(
                                     onRefresh: _load,
                                     child: ListView(
+                                      controller: _scrollController,
                                       padding: const EdgeInsets.all(24),
                                       children: [
                                         _postCard(_detail!.post),
@@ -685,6 +709,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   Widget _commentInput() {
     return Container(
+      key: _commentInputKey,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.06),
@@ -704,6 +729,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
           const SizedBox(height: 8),
           TextField(
             controller: _commentCtrl,
+            focusNode: _commentFocusNode,
             minLines: 3,
             maxLines: 5,
             decoration: InputDecoration(

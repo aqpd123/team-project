@@ -123,7 +123,9 @@ class FriendController extends ChangeNotifier {
       if (userId == 0 || userId == _auth.user?.id) continue;
       final name = (item['username'] ?? item['email'] ?? '사용자') as String;
       final email = (item['email'] ?? '') as String;
-      final element = _elementFromCharacter(item['character_type']);
+      final characterTypeRaw = item['character_type'] as String?;
+      final characterTypeEn = _normalizeCharacterType(characterTypeRaw);
+      final element = _elementFromCharacter(characterTypeRaw);
       if (normalized.isNotEmpty) {
         final lowerName = name.toLowerCase();
         final lowerEmail = email.toLowerCase();
@@ -139,6 +141,7 @@ class FriendController extends ChangeNotifier {
           email: email,
           elementLabel: element,
           status: relationStatusFor(userId),
+          characterType: characterTypeEn?.toLowerCase(),
         ),
       );
     }

@@ -22,11 +22,11 @@ const Map<String, String> _traitLabels = {
 };
 
 const Map<String, String> _characterLabels = {
-  'wood': '목의 사람',
-  'fire': '화의 사람',
-  'earth': '토의 사람',
-  'metal': '금의 사람',
-  'water': '수의 사람',
+  'wood': '목(木)',
+  'fire': '화(火)',
+  'earth': '토(土)',
+  'metal': '금(金)',
+  'water': '수(水)',
   'unknown': '분류되지 않음',
 };
 
@@ -84,8 +84,6 @@ class SajuAnalysisView extends StatelessWidget {
                             _buildElementsCard(),
                             const SizedBox(height: 16),
                             _buildTraitsCard(),
-                            const SizedBox(height: 16),
-                            _buildFlagsCard(),
                             const SizedBox(height: 16),
                             _buildReportCard(),
                           ],
@@ -380,45 +378,6 @@ class SajuAnalysisView extends StatelessWidget {
     );
   }
 
-  Widget _buildFlagsCard() {
-    if (result.flags.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return _buildCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const _SectionHeader(title: '특이 기운 ⚡'),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: result.flags
-                .map(
-                  (flag) => Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.2)),
-                    ),
-                    child: Text(
-                      flag,
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildReportCard() {
     final entries = result.traits.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -427,8 +386,13 @@ class SajuAnalysisView extends StatelessWidget {
       final score = (entry.value * 100).round();
       return '$label ${score}점';
     }).toList();
+    // AI 사주 해석이 있으면 이를 우선적으로 사용하고,
+    // 없으면 기존 trait 기반 요약 문구를 사용한다.
+    final defaultDescription = top.isEmpty
+        ? '분석 정보를 찾을 수 없습니다.'
+        : '${top.join(", ")} 특성이 두드러집니다.';
     final description =
-        top.isEmpty ? '분석 정보를 찾을 수 없습니다.' : '${top.join(", ")} 특성이 두드러집니다.';
+        (result.aiSummary.isNotEmpty ? result.aiSummary : defaultDescription);
 
     return _buildCard(
       child: Column(

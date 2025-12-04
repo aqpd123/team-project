@@ -54,6 +54,11 @@ class SajuCompatibilityPage extends StatefulWidget {
 class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
   late TextEditingController _nameCtrl1;
   late TextEditingController _nameCtrl2;
+  final _nameFocusNode1 = FocusNode();
+  final _nameFocusNode2 = FocusNode();
+  final _personCardKey1 = GlobalKey();
+  final _personCardKey2 = GlobalKey();
+  final _scrollController = ScrollController();
   DateTime? _birthDate1;
   DateTime? _birthDate2;
   String? _gender1;
@@ -70,6 +75,10 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
     super.initState();
     _nameCtrl1 = TextEditingController();
     _nameCtrl2 = TextEditingController();
+    
+    // 입력 필드 포커스 변경 시 스크롤
+    _nameFocusNode1.addListener(() => _onNameFocusChanged(1));
+    _nameFocusNode2.addListener(() => _onNameFocusChanged(2));
 
     // 초기 결과가 있으면 바로 결과 화면 표시
     if (widget.initialResult != null) {
@@ -77,6 +86,47 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
       _nameCtrl1.text = widget.person1Name ?? '나';
       _nameCtrl2.text = widget.person2Name ?? '친구';
       _showResult = true;
+    }
+  }
+  
+  void _onNameFocusChanged(int personIndex) {
+    final focusNode = personIndex == 1 ? _nameFocusNode1 : _nameFocusNode2;
+    final cardKey = personIndex == 1 ? _personCardKey1 : _personCardKey2;
+    
+    if (focusNode.hasFocus) {
+      // 키보드가 올라온 후 스크롤 (게시판 댓글 작성과 동일한 방식)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !focusNode.hasFocus) return;
+        
+        final context = cardKey.currentContext;
+        if (context == null) return;
+        
+        // 이름 입력 필드가 완전히 보이도록 스크롤
+        // 두 번째 사람은 더 위로 스크롤 (이름 UI 앞까지)
+        final alignment = personIndex == 2 ? 0.25 : 0.15;
+        
+        Scrollable.ensureVisible(
+          context,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          alignment: alignment, // 이름 UI가 화면 상단 15-25% 위치에 오도록
+        );
+        
+        // 키보드 애니메이션이 완료된 후 한 번 더 확인
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (!mounted || !focusNode.hasFocus) return;
+          
+          final context2 = cardKey.currentContext;
+          if (context2 == null) return;
+          
+          Scrollable.ensureVisible(
+            context2,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            alignment: alignment,
+          );
+        });
+      });
     }
   }
 
@@ -190,6 +240,9 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
   void dispose() {
     _nameCtrl1.dispose();
     _nameCtrl2.dispose();
+    _nameFocusNode1.dispose();
+    _nameFocusNode2.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -350,12 +403,14 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
     }
 
     return Scaffold(
+      resizeToAvoidBottomInset: false, // 키보드가 올라와도 배경이 움직이지 않도록
       body: Stack(
         children: [
           _buildBackground(),
           Positioned.fill(
             child: SafeArea(
               child: SingleChildScrollView(
+                controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -368,10 +423,12 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
                       child: Column(
                         children: [
                           _buildPersonCard(
+                            key: _personCardKey1,
                             title: widget.friendData != null ? '나' : '첫 번째 사람',
                             accentColor: const Color(0xFFF472B6),
                             indexLabel: '1',
                             nameController: _nameCtrl1,
+                            nameFocusNode: _nameFocusNode1,
                             birthDate: _birthDate1,
                             onPickDate: () => _pickBirthDate(1),
                             gender: _gender1,
@@ -382,12 +439,14 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
                           ),
                           const SizedBox(height: 20),
                           _buildPersonCard(
+                            key: _personCardKey2,
                             title: widget.friendData != null
                                 ? widget.friendData!.name
                                 : '두 번째 사람',
                             accentColor: const Color(0xFF8B5CF6),
                             indexLabel: '2',
                             nameController: _nameCtrl2,
+                            nameFocusNode: _nameFocusNode2,
                             birthDate: _birthDate2,
                             onPickDate: () => _pickBirthDate(2),
                             gender: _gender2,
@@ -535,10 +594,12 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
   }
 
   Widget _buildPersonCard({
+    Key? key,
     required String title,
     required String indexLabel,
     required Color accentColor,
     required TextEditingController nameController,
+    FocusNode? nameFocusNode,
     required DateTime? birthDate,
     required VoidCallback onPickDate,
     required String? gender,
@@ -547,6 +608,7 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
     bool isLoading = false,
   }) {
     return Container(
+      key: key,
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -592,6 +654,7 @@ class _SajuCompatibilityPageState extends State<SajuCompatibilityPage> {
           _buildInputContainer(
             child: TextField(
               controller: nameController,
+              focusNode: nameFocusNode,
               enabled: enabled,
               style: TextStyle(
                 color: enabled ? Colors.white : Colors.white54,

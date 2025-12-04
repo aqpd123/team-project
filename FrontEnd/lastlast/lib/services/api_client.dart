@@ -31,8 +31,10 @@ class ApiClient {
             Dio(
               BaseOptions(
                 baseUrl: baseUrl ?? defaultApiBaseUrl,
-                connectTimeout: const Duration(seconds: 10),
-                receiveTimeout: const Duration(seconds: 15),
+                // 초기 호출(예: 유명인 궁합 + AI 분석)이 시간이 조금 걸릴 수 있으므로
+                // 타임아웃을 여유 있게 늘려 불필요한 네트워크 오류를 줄인다.
+                connectTimeout: const Duration(seconds: 20),
+                receiveTimeout: const Duration(seconds: 30),
                 headers: const {
                   'Content-Type': 'application/json; charset=utf-8',
                 },

@@ -17,6 +17,7 @@ from app.common.schemas import (
     load_json,
 )
 from app.infrastructure.database.repositories.user_repository import user_repository
+from app.infrastructure.external.gemini_client import get_gemini_client
 
 bp = Blueprint("saju", __name__, url_prefix="/saju")
 
@@ -89,7 +90,32 @@ def analyze_traits_from_birth():
         character_type = calc.determine_character_type(saju)
         result["character"] = character_type
         result["saju"] = saju
-        
+
+        # Gemini를 사용한 개인 사주 전반 분석 요약 생성
+        try:
+            gemini = get_gemini_client()
+            print("🔮 Gemini 개인 사주 분석 시도 (/saju/traits/birth)")
+            personal_summary = gemini.generate_personal_analysis(
+                name=None,  # 아래에서 current_user 조회 후 다시 설정
+                character_type=character_type,
+                five_elements=result.get("five", {}),
+                traits=result.get("traits", {}),
+                flags=result.get("flags", []),
+                gender=gender,
+            )
+            if personal_summary:
+                print("✅ Gemini 개인 사주 분석 성공: 요약 생성 완료")
+                result["ai_summary"] = personal_summary
+                print(f"📝 ai_summary 길이: {len(personal_summary)}자")
+                print(f"📝 ai_summary 미리보기: {personal_summary[:100]}...")
+            else:
+                print("⚠️ Gemini 개인 사주 분석: 응답이 비어 있음(None 또는 빈 문자열)")
+        except Exception as ai_error:
+            # AI 분석 실패는 무시하고 기본 데이터만 반환
+            import traceback
+            print(f"❌ Gemini 개인 사주 분석 생성 실패: {ai_error}")
+            traceback.print_exc()
+
         # 현재 로그인한 사용자의 정보를 데이터베이스에 업데이트
         try:
             current_user = get_current_user()
@@ -98,16 +124,20 @@ def analyze_traits_from_birth():
             if user_id:
                 # 생년월일을 datetime 형식으로 변환 (YYYY-MM-DD)
                 birth_date_str = f"{birth['year']}-{birth['month']:02d}-{birth['day']:02d}"
-                
-                # 사주 분석 결과 전체를 JSON으로 저장 (character, five, traits, flags, report, saju 포함)
+
+                # DB에 저장할 전체 결과 구성 (ai_summary 포함)
                 full_result = {
-                    "character": character_type,
+                    "character": result.get("character"),
                     "five": result.get("five", {}),
                     "traits": result.get("traits", {}),
                     "flags": result.get("flags", []),
                     "report": result.get("report", ""),
-                    "saju": saju,
+                    "saju": result.get("saju", saju),
                 }
+                # AI 요약이 있으면 함께 저장
+                if "ai_summary" in result:
+                    full_result["ai_summary"] = result["ai_summary"]
+
                 saju_json = json.dumps(full_result, ensure_ascii=False)
                 
                 print(f"💾 사용자 {user_id} 사주 데이터 저장 시도")
@@ -115,6 +145,10 @@ def analyze_traits_from_birth():
                 print(f"💾 birth_date: {birth_date_str}")
                 print(f"💾 gender: {gender}")
                 print(f"💾 saju_data 길이: {len(saju_json)}")
+                if "ai_summary" in full_result:
+                    print(f"💾 saju_data에 ai_summary 포함 (길이: {len(full_result['ai_summary'])}자)")
+                else:
+                    print("⚠️ saju_data에 ai_summary가 포함되지 않음")
                 
                 # character_type은 이미 영어("wood", "fire" 등)로 반환됨
                 character_type_en = _convert_character_to_en(character_type)
@@ -133,6 +167,12 @@ def analyze_traits_from_birth():
             import traceback
             print(f"⚠️ 사용자 정보 업데이트 실패: {db_error}")
             traceback.print_exc()
+
+        # 응답 직전에 ai_summary 포함 여부 확인
+        if "ai_summary" in result:
+            print(f"✅ 응답에 ai_summary 포함됨 (길이: {len(result['ai_summary'])}자)")
+        else:
+            print("⚠️ 응답에 ai_summary가 포함되지 않음")
         
         return jsonify(result), 200
     except (ValidationError, ValueError) as e:

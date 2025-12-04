@@ -47,6 +47,7 @@ class FriendSearchResult {
     required this.email,
     required this.elementLabel,
     required this.status,
+    this.characterType,
   });
 
   final int userId;
@@ -54,4 +55,5 @@ class FriendSearchResult {
   final String email;
   final String elementLabel;
   final FriendRelationStatus status;
+  final String? characterType; // 영어 오행 타입 ('wood', 'fire', etc.)
 }

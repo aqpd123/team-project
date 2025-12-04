@@ -22,7 +22,27 @@ class SajuController extends ChangeNotifier {
         data: request.toJson(),
       );
       _error = null;
+      
+      // 디버깅: 응답에 ai_summary가 포함되어 있는지 확인
+      print("📥 개인 사주 분석 응답 수신");
+      print("📥 응답 키 목록: ${response.keys.toList()}");
+      if (response.containsKey('ai_summary')) {
+        final aiSummary = response['ai_summary'];
+        print("✅ 응답에 ai_summary 포함됨");
+        print("📝 ai_summary 타입: ${aiSummary.runtimeType}");
+        print("📝 ai_summary 값: ${aiSummary?.toString().substring(0, (aiSummary?.toString().length ?? 0) > 100 ? 100 : (aiSummary?.toString().length ?? 0))}...");
+      } else {
+        print("⚠️ 응답에 ai_summary가 없음");
+      }
+      
       final result = SajuAnalysisResult.fromJson(response);
+      print("📝 파싱된 result.aiSummary 길이: ${result.aiSummary.length}자");
+      if (result.aiSummary.isNotEmpty) {
+        print("✅ result.aiSummary 내용: ${result.aiSummary.substring(0, result.aiSummary.length > 100 ? 100 : result.aiSummary.length)}...");
+      } else {
+        print("⚠️ result.aiSummary가 비어있음");
+      }
+      
       return result;
     } on ApiException catch (e) {
       _error = e.message;
