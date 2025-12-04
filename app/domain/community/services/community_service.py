@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, List, Dict, Any
 
-from app.common.exceptions import NotFoundError, ValidationError
+from app.common.exceptions import NotFoundError, ValidationError, AuthorizationError
 from app.domain.community.models import Post, Comment
 from app.infrastructure.database.repositories.post_repository import post_repository
 from app.infrastructure.database.repositories.comment_repository import comment_repository
@@ -90,5 +90,19 @@ class CommunityService:
         self._ensure_post(post_id)
         self._ensure_user(user_id)
         return self.posts.toggle_like(post_id, user_id)
+
+    def update_post(self, post_id: int, user_id: int, title: str, content: str) -> None:
+        """게시글 수정 (작성자만 가능)"""
+        self._ensure_post(post_id)
+        self._ensure_user(user_id)
+        if not title or not content:
+            raise ValidationError("제목과 내용은 필수입니다.")
+        self.posts.update(post_id=post_id, author_id=user_id, title=title, content=content)
+
+    def delete_post(self, post_id: int, user_id: int) -> None:
+        """게시글 삭제 (작성자만 가능)"""
+        self._ensure_post(post_id)
+        self._ensure_user(user_id)
+        self.posts.delete(post_id=post_id, author_id=user_id)
 
 

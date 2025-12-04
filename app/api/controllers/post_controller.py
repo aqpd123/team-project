@@ -146,3 +146,40 @@ def toggle_like(post_id: int):
         return _handle_exception(exc)
 
 
+@bp.put("/<int:post_id>")
+@require_auth()
+def update_post(post_id: int):
+    """게시글 수정"""
+    try:
+        payload = load_json(PostCreateSchema, request.get_json(silent=True))
+        current_user = get_current_user()
+        community_service.update_post(
+            post_id=post_id,
+            user_id=current_user["user_id"],
+            title=payload["title"],
+            content=payload["content"],
+        )
+        return jsonify({"ok": True}), 200
+    except AppError as exc:
+        return _error_response(exc)
+    except Exception as exc:
+        return _handle_exception(exc)
+
+
+@bp.delete("/<int:post_id>")
+@require_auth()
+def delete_post(post_id: int):
+    """게시글 삭제"""
+    try:
+        current_user = get_current_user()
+        community_service.delete_post(
+            post_id=post_id,
+            user_id=current_user["user_id"],
+        )
+        return jsonify({"ok": True}), 204
+    except AppError as exc:
+        return _error_response(exc)
+    except Exception as exc:
+        return _handle_exception(exc)
+
+

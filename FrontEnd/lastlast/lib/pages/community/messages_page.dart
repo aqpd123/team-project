@@ -25,9 +25,20 @@ class _MessagesPageState extends State<MessagesPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      MessageScope.of(context).ensureThreadsLoaded();
+      MessageScope.of(context).loadThreads();
       _initialized = true;
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // 페이지가 표시될 때마다 쪽지함 새로고침
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        MessageScope.of(context).loadThreads();
+      }
+    });
   }
 
   @override
@@ -61,7 +72,8 @@ class _MessagesPageState extends State<MessagesPage> {
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const SizedBox(width: 20),
                       ],
@@ -75,12 +87,14 @@ class _MessagesPageState extends State<MessagesPage> {
                             : ListView.separated(
                                 physics: const AlwaysScrollableScrollPhysics(),
                                 itemCount: threads.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 12),
                                 itemBuilder: (context, index) {
                                   final thread = threads[index];
                                   return _ThreadTile(
                                     thread: thread,
-                                    onTap: () => widget.onOpenThread?.call(thread),
+                                    onTap: () =>
+                                        widget.onOpenThread?.call(thread),
                                   );
                                 },
                               ),
@@ -108,7 +122,8 @@ class _MessagesPageState extends State<MessagesPage> {
               CircleAvatar(
                 radius: 55,
                 backgroundColor: Colors.white24,
-                child: Icon(Icons.mail_outline, color: Colors.white60, size: 48),
+                child:
+                    Icon(Icons.mail_outline, color: Colors.white60, size: 48),
               ),
               SizedBox(height: 24),
               Text(
@@ -197,7 +212,8 @@ class _ThreadTile extends StatelessWidget {
                       ),
                       Text(
                         dateLabel,
-                        style: const TextStyle(color: Colors.white54, fontSize: 12),
+                        style: const TextStyle(
+                            color: Colors.white54, fontSize: 12),
                       ),
                     ],
                   ),
@@ -214,7 +230,8 @@ class _ThreadTile extends StatelessWidget {
             if (thread.unreadCount > 0)
               Container(
                 margin: const EdgeInsets.only(left: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFACC15),
                   borderRadius: BorderRadius.circular(999),
@@ -234,5 +251,3 @@ class _ThreadTile extends StatelessWidget {
     );
   }
 }
-
-

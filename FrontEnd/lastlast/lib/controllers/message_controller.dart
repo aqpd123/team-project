@@ -20,9 +20,11 @@ class MessageController extends ChangeNotifier {
   String? _error;
 
   final List<MessageThreadModel> _threads = [];
-  final Map<int, List<ChatMessageModel>> _conversations = {};
+  final Map<String, List<ChatMessageModel>> _conversations =
+      {}; // 키를 String으로 변경 (익명 여부 포함)
 
-  UnmodifiableListView<MessageThreadModel> get threads => UnmodifiableListView(_threads);
+  UnmodifiableListView<MessageThreadModel> get threads =>
+      UnmodifiableListView(_threads);
   bool get isLoadingThreads => _loadingThreads;
   bool get isLoadingConversation => _loadingConversation;
   bool get isSending => _sending;
@@ -35,44 +37,77 @@ class MessageController extends ChangeNotifier {
   }
 
   Future<void> loadThreads() async {
-    if (!_auth.isLoggedIn) return;
+    if (!_auth.isLoggedIn) {
+      print('loadThreads: User not logged in');
+      return;
+    }
     _loadingThreads = true;
     _error = null;
     notifyListeners();
     try {
+      print('loadThreads: Fetching threads from API...');
       final response = await _api.get('/messages/threads');
+      print('loadThreads: API response: $response');
       final items = response['items'] as List<dynamic>? ?? const [];
-      _threads
-        ..clear()
-        ..addAll(
-          items
-              .whereType<Map<String, dynamic>>()
-              .map((item) => _mapThread(item)),
-        );
+      print('loadThreads: Found ${items.length} items');
+      _threads.clear();
+      for (final item in items) {
+        if (item is Map<String, dynamic>) {
+          try {
+            print('loadThreads: Mapping item: $item');
+            final thread = _mapThread(item);
+            print(
+                'loadThreads: Mapped thread: peerId=${thread.peerId}, peerName=${thread.peerName}');
+            _threads.add(thread);
+          } catch (e, stackTrace) {
+            // 매핑 오류가 발생한 경우 해당 항목을 건너뛰고 계속 진행
+            print('Error mapping thread: $e');
+            print('Stack trace: $stackTrace');
+            print('Item: $item');
+          }
+        }
+      }
+      print('loadThreads: Total threads after mapping: ${_threads.length}');
     } on ApiException catch (e) {
       _error = e.message;
+      print('Error loading threads (ApiException): ${e.message}');
+      print('Status code: ${e.statusCode}');
+    } catch (e, stackTrace) {
+      _error = '쪽지함을 불러오는 중 오류가 발생했습니다.';
+      print('Unexpected error loading threads: $e');
+      print('Stack trace: $stackTrace');
     } finally {
       _loadingThreads = false;
       notifyListeners();
     }
   }
 
-  Future<void> loadConversation(int peerId) async {
+  Future<void> loadConversation(int peerId, {bool isAnonymous = false}) async {
     if (!_auth.isLoggedIn) return;
     _loadingConversation = true;
     _error = null;
     notifyListeners();
     try {
-      final response = await _api.get('/messages/conversations/$peerId');
+      final response = await _api.get(
+        '/messages/conversations/$peerId',
+        queryParameters: {'is_anonymous': isAnonymous.toString()},
+      );
       final items = response['items'] as List<dynamic>? ?? const [];
-      final list = items.whereType<Map<String, dynamic>>().map(_mapMessage).toList();
+      final list =
+          items.whereType<Map<String, dynamic>>().map(_mapMessage).toList();
       list.sort((a, b) {
         final left = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
         final right = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
         return left.compareTo(right);
       });
-      _conversations[peerId] = list;
-      await _api.post('/messages/conversations/$peerId/read');
+      // 익명 여부를 키에 포함하여 별도로 저장
+      final conversationKey =
+          isAnonymous ? 'anonymous:$peerId' : peerId.toString();
+      _conversations[conversationKey] = list;
+      await _api.post(
+        '/messages/conversations/$peerId/read',
+        queryParameters: {'is_anonymous': isAnonymous.toString()},
+      );
       await loadThreads();
     } on ApiException catch (e) {
       _error = e.message;
@@ -82,21 +117,31 @@ class MessageController extends ChangeNotifier {
     }
   }
 
-  List<ChatMessageModel> conversationFor(int peerId) {
-    return List.unmodifiable(_conversations[peerId] ?? const []);
+  List<ChatMessageModel> conversationFor(int peerId,
+      {bool isAnonymous = false}) {
+    final conversationKey =
+        isAnonymous ? 'anonymous:$peerId' : peerId.toString();
+    return List.unmodifiable(_conversations[conversationKey] ?? const []);
   }
 
-  Future<void> sendMessage(int peerId, String content) async {
+  Future<void> sendMessage(int peerId, String content,
+      {bool isAnonymous = false}) async {
     if (!_auth.isLoggedIn || content.trim().isEmpty) return;
     _sending = true;
     notifyListeners();
     try {
       final response = await _api.post(
         '/messages',
-        data: {'recipient_id': peerId, 'content': content.trim()},
+        data: {
+          'recipient_id': peerId,
+          'content': content.trim(),
+          'is_anonymous': isAnonymous,
+        },
       );
       final message = _mapMessage(response['message'] as Map<String, dynamic>);
-      final list = _conversations.putIfAbsent(peerId, () => []);
+      final conversationKey =
+          isAnonymous ? 'anonymous:$peerId' : peerId.toString();
+      final list = _conversations.putIfAbsent(conversationKey, () => []);
       list.add(message);
       list.sort((a, b) {
         final left = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -113,15 +158,47 @@ class MessageController extends ChangeNotifier {
   }
 
   MessageThreadModel _mapThread(Map<String, dynamic> json) {
-    final peer = json['peer'] as Map<String, dynamic>? ?? const {};
+    print('_mapThread: Input json: $json');
+    final peer = json['peer'] as Map<String, dynamic>?;
+    if (peer == null) {
+      print('_mapThread: Warning - peer is null');
+    }
+    final isAnonymous = json['is_anonymous'] as bool? ?? false;
+    
+    // user_id를 안전하게 파싱 (문자열 또는 숫자 모두 처리)
+    final peerIdRaw = peer?['user_id'];
+    final peerId = peerIdRaw is int
+        ? peerIdRaw
+        : (peerIdRaw is String
+            ? int.tryParse(peerIdRaw) ?? 0
+            : 0);
+    
+    final peerName = (peer?['username'] ?? peer?['email'] ?? '사용자') as String;
+    final peerEmail = peer?['email'] as String?;
+    final content = (json['content'] ?? '') as String;
+    final createdAt = json['created_at'];
+    
+    // unread_count를 안전하게 파싱 (문자열 또는 숫자 모두 처리)
+    final unreadCountRaw = json['unread_count'];
+    final unreadCount = unreadCountRaw is int
+        ? unreadCountRaw
+        : (unreadCountRaw is String
+            ? int.tryParse(unreadCountRaw) ?? 0
+            : 0);
+
+    print(
+        '_mapThread: peerId=$peerId, peerName=$peerName, isAnonymous=$isAnonymous, content=$content, unreadCount=$unreadCount');
+
     return MessageThreadModel(
-      peerId: peer['user_id'] as int? ?? 0,
-      peerName: (peer['username'] ?? peer['email'] ?? '사용자') as String,
-      peerEmail: peer['email'] as String?,
-      elementLabel: _elementFromCharacter(peer['character_type']),
-      lastMessage: (json['content'] ?? '') as String,
-      lastSentAt: _parseDate(json['created_at']),
-      unreadCount: json['unread_count'] as int? ?? 0,
+      peerId: peerId,
+      peerName: peerName,
+      peerEmail: peerEmail,
+      elementLabel:
+          isAnonymous ? '익명' : _elementFromCharacter(peer?['character_type']),
+      lastMessage: content,
+      lastSentAt: _parseDate(createdAt),
+      unreadCount: unreadCount,
+      isAnonymous: isAnonymous,
     );
   }
 
@@ -192,5 +269,3 @@ class MessageScope extends InheritedNotifier<MessageController> {
     return scope!.notifier!;
   }
 }
-
-

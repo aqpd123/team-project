@@ -8,9 +8,17 @@ class WritePostPage extends StatefulWidget {
   const WritePostPage({
     super.key,
     this.onBack,
+    this.postId,
+    this.initialTitle,
+    this.initialContent,
+    this.initialBoardType,
   });
 
   final VoidCallback? onBack;
+  final int? postId; // 수정 모드일 때 게시글 ID
+  final String? initialTitle;
+  final String? initialContent;
+  final String? initialBoardType;
 
   @override
   State<WritePostPage> createState() => _WritePostPageState();
@@ -18,11 +26,58 @@ class WritePostPage extends StatefulWidget {
 
 class _WritePostPageState extends State<WritePostPage> {
   final _formKey = GlobalKey<FormState>();
-  String _title = '';
-  String _content = '';
+  late final TextEditingController _titleCtrl;
+  late final TextEditingController _contentCtrl;
   String _category = 'anonymous';
   String _ohangCategory = '';
   bool _submitting = false;
+  bool _isEditMode = false;
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 빈 값으로 초기화
+    _titleCtrl = TextEditingController();
+    _contentCtrl = TextEditingController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // didChangeDependencies에서 초기값 설정
+    if (!_initialized) {
+      _isEditMode = widget.postId != null;
+
+      // 초기값 설정
+      if (widget.initialTitle != null && widget.initialTitle!.isNotEmpty) {
+        _titleCtrl.text = widget.initialTitle!;
+      }
+      if (widget.initialContent != null && widget.initialContent!.isNotEmpty) {
+        _contentCtrl.text = widget.initialContent!;
+      }
+
+      // 수정 모드일 때 board_type에 따라 카테고리 설정
+      if (_isEditMode && widget.initialBoardType != null) {
+        final boardType = widget.initialBoardType!.toLowerCase();
+        if (['fire', 'water', 'wood', 'metal', 'earth'].contains(boardType)) {
+          _category = 'ohang';
+          _ohangCategory = boardType;
+        } else {
+          _category = 'anonymous';
+        }
+      }
+
+      _initialized = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    _titleCtrl.dispose();
+    _contentCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -40,18 +95,35 @@ class _WritePostPageState extends State<WritePostPage> {
         ? _ohangCategory
         : null;
     try {
-      await community.createPost(
-        title: _title.trim(),
-        content: _content.trim(),
-        boardType: boardType,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('게시글이 성공적으로 업로드되었습니다!'),
-          backgroundColor: Color(0xFF10B981),
-        ),
-      );
+      if (_isEditMode && widget.postId != null) {
+        // 수정 모드
+        await community.updatePost(
+          postId: widget.postId!,
+          title: _titleCtrl.text.trim(),
+          content: _contentCtrl.text.trim(),
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('게시글이 성공적으로 수정되었습니다!'),
+            backgroundColor: Color(0xFF10B981),
+          ),
+        );
+      } else {
+        // 작성 모드
+        await community.createPost(
+          title: _titleCtrl.text.trim(),
+          content: _contentCtrl.text.trim(),
+          boardType: boardType,
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('게시글이 성공적으로 업로드되었습니다!'),
+            backgroundColor: Color(0xFF10B981),
+          ),
+        );
+      }
       widget.onBack?.call();
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -78,85 +150,88 @@ class _WritePostPageState extends State<WritePostPage> {
             child: ListView(
               padding: const EdgeInsets.all(24),
               children: [
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _backButton(),
-                      GestureDetector(
-                        onTap: _submitting ? null : _handleSubmit,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.4),
-                              width: 1.5,
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _backButton(),
+                        GestureDetector(
+                          onTap: _submitting ? null : _handleSubmit,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.4),
+                                width: 1.5,
+                              ),
                             ),
+                            child: _submitting
+                                ? const SizedBox(
+                                    height: 16,
+                                    width: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    '완료',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                           ),
-                          child: _submitting
-                              ? const SizedBox(
-                                  height: 16,
-                                  width: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text(
-                                  '완료',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const Text(
-                    '글쓰기 ✍️',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
+                      ],
                     ),
-                  ),
+                    Text(
+                      _isEditMode ? '글 수정 ✏️' : '글쓰기 ✍️',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                // 수정 모드일 때는 카테고리 선택 비활성화
+                if (!_isEditMode) ...[
+                  _categorySelector(),
+                  if (_category == 'ohang') ...[
+                    const SizedBox(height: 16),
+                    _ohangSelector(),
+                  ],
+                  const SizedBox(height: 16),
                 ],
-              ),
-              const SizedBox(height: 20),
-              _categorySelector(),
-              if (_category == 'ohang') ...[
                 const SizedBox(height: 16),
-                _ohangSelector(),
+                _textField(
+                  label: '제목',
+                  hint: '제목을 입력하세요...',
+                  maxLength: 60,
+                  controller: _titleCtrl,
+                ),
+                const SizedBox(height: 12),
+                _textField(
+                  label: '내용',
+                  hint: '내용을 입력하세요...',
+                  maxLines: 12,
+                  controller: _contentCtrl,
+                ),
+                const SizedBox(height: 12),
+                _tips(),
               ],
-              const SizedBox(height: 16),
-              _textField(
-                label: '제목',
-                hint: '제목을 입력하세요...',
-                maxLength: 60,
-                value: _title,
-                onChanged: (v) => setState(() => _title = v),
-              ),
-              const SizedBox(height: 12),
-              _textField(
-                label: '내용',
-                hint: '내용을 입력하세요...',
-                maxLines: 12,
-                value: _content,
-                onChanged: (v) => setState(() => _content = v),
-              ),
-              const SizedBox(height: 12),
-              _tips(),
-            ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 
@@ -204,7 +279,8 @@ class _WritePostPageState extends State<WritePostPage> {
   }
 
   Widget _ohangSelector() {
-    Widget buildChip(String label, String value, List<Color> colors, IconData icon) {
+    Widget buildChip(
+        String label, String value, List<Color> colors, IconData icon) {
       final selected = _ohangCategory == value;
       return Expanded(
         child: GestureDetector(
@@ -241,23 +317,38 @@ class _WritePostPageState extends State<WritePostPage> {
         const SizedBox(height: 8),
         Row(
           children: [
-            buildChip('화', 'fire', [const Color(0xFFF87171), const Color(0xFFF97316)],
+            buildChip(
+                '화',
+                'fire',
+                [const Color(0xFFF87171), const Color(0xFFF97316)],
                 Icons.local_fire_department_outlined),
             const SizedBox(width: 8),
-            buildChip('수', 'water', [const Color(0xFF38BDF8), const Color(0xFF22D3EE)],
+            buildChip(
+                '수',
+                'water',
+                [const Color(0xFF38BDF8), const Color(0xFF22D3EE)],
                 Icons.water_drop_outlined),
             const SizedBox(width: 8),
-            buildChip('목', 'wood', [const Color(0xFF34D399), const Color(0xFF10B981)],
+            buildChip(
+                '목',
+                'wood',
+                [const Color(0xFF34D399), const Color(0xFF10B981)],
                 Icons.eco_outlined),
           ],
         ),
         const SizedBox(height: 8),
         Row(
           children: [
-            buildChip('금', 'metal', [const Color(0xFFFBBF24), const Color(0xFFF59E0B)],
+            buildChip(
+                '금',
+                'metal',
+                [const Color(0xFFFBBF24), const Color(0xFFF59E0B)],
                 Icons.hexagon_outlined),
             const SizedBox(width: 8),
-            buildChip('토', 'earth', [const Color(0xFFD97706), const Color(0xFFB45309)],
+            buildChip(
+                '토',
+                'earth',
+                [const Color(0xFFD97706), const Color(0xFFB45309)],
                 Icons.landscape_outlined),
           ],
         ),
@@ -268,8 +359,7 @@ class _WritePostPageState extends State<WritePostPage> {
   Widget _textField({
     required String label,
     required String hint,
-    required String value,
-    required ValueChanged<String> onChanged,
+    required TextEditingController controller,
     int maxLines = 1,
     int? maxLength,
   }) {
@@ -279,7 +369,7 @@ class _WritePostPageState extends State<WritePostPage> {
         Text(label, style: const TextStyle(color: Colors.white)),
         const SizedBox(height: 6),
         TextFormField(
-          initialValue: value,
+          controller: controller,
           maxLines: maxLines,
           maxLength: maxLength,
           validator: (val) {
@@ -288,7 +378,6 @@ class _WritePostPageState extends State<WritePostPage> {
             }
             return null;
           },
-          onChanged: onChanged,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: const TextStyle(color: Colors.white54),
@@ -296,11 +385,13 @@ class _WritePostPageState extends State<WritePostPage> {
             fillColor: Colors.white.withValues(alpha: 0.08),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+              borderSide:
+                  BorderSide(color: Colors.white.withValues(alpha: 0.2)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+              borderSide:
+                  BorderSide(color: Colors.white.withValues(alpha: 0.2)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
@@ -359,4 +450,3 @@ class _WritePostPageState extends State<WritePostPage> {
     );
   }
 }
-

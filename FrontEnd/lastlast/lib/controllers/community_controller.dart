@@ -39,9 +39,7 @@ class CommunityController extends ChangeNotifier {
       _posts
         ..clear()
         ..addAll(
-          items
-              .whereType<Map<String, dynamic>>()
-              .map(CommunityPost.fromJson),
+          items.whereType<Map<String, dynamic>>().map(CommunityPost.fromJson),
         );
       _error = null;
     } on ApiException catch (e) {
@@ -61,9 +59,9 @@ class CommunityController extends ChangeNotifier {
       throw const ApiException('로그인이 필요합니다.', statusCode: 401);
     }
     final data = <String, dynamic>{
-      'title': title,
-      'content': content,
-      'author_id': _auth.user!.id,
+        'title': title,
+        'content': content,
+        'author_id': _auth.user!.id,
     };
     // boardType이 null이 아니고 비어있지 않을 때만 추가
     if (boardType != null && boardType.isNotEmpty) {
@@ -127,7 +125,7 @@ class CommunityController extends ChangeNotifier {
     final response = await _api.post('/posts/$postId/like');
     // 게시글 목록도 업데이트
     await refreshPosts();
-    return response as Map<String, dynamic>;
+    return response;
   }
 
   Future<CommentModel> addComment({
@@ -144,10 +142,37 @@ class CommunityController extends ChangeNotifier {
         'author_id': _auth.user!.id,
       },
     );
-    final commentJson = (response['comment'] as Map<String, dynamic>? ?? const {});
+    final commentJson =
+        (response['comment'] as Map<String, dynamic>? ?? const {});
     final comment = CommentModel.fromJson(commentJson);
     await refreshPosts();
     return comment;
+  }
+
+  Future<void> updatePost({
+    required int postId,
+    required String title,
+    required String content,
+  }) async {
+    if (!_auth.isLoggedIn || _auth.user == null) {
+      throw const ApiException('로그인이 필요합니다.', statusCode: 401);
+    }
+    await _api.put(
+      '/posts/$postId',
+      data: {
+        'title': title,
+        'content': content,
+      },
+    );
+    await refreshPosts();
+  }
+
+  Future<void> deletePost(int postId) async {
+    if (!_auth.isLoggedIn || _auth.user == null) {
+      throw const ApiException('로그인이 필요합니다.', statusCode: 401);
+    }
+    await _api.delete('/posts/$postId');
+    await refreshPosts();
   }
 
   void _handleAuthChanged() {
@@ -172,11 +197,8 @@ class CommunityScope extends InheritedNotifier<CommunityController> {
   }) : super(notifier: controller);
 
   static CommunityController of(BuildContext context) {
-    final scope =
-        context.dependOnInheritedWidgetOfExactType<CommunityScope>();
+    final scope = context.dependOnInheritedWidgetOfExactType<CommunityScope>();
     assert(scope != null, 'CommunityScope is missing in the widget tree');
     return scope!.notifier!;
   }
 }
-
-

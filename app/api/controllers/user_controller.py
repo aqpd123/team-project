@@ -100,3 +100,69 @@ def get_user(user_id: int):
     return jsonify(serialized)
 
 
+@bp.patch("/<int:user_id>")
+@require_auth()
+def update_user(user_id: int):
+    """사용자 정보 업데이트 (닉네임, 비밀번호 등)"""
+    from app.common.security.auth import get_current_user
+    from werkzeug.security import generate_password_hash, check_password_hash
+    
+    current_user = get_current_user()
+    if current_user.get("user_id") != user_id:
+        return jsonify({"error": "본인의 정보만 수정할 수 있습니다."}), 403
+    
+    data = request.get_json() or {}
+    username = data.get("username")
+    new_password = data.get("new_password")
+    current_password = data.get("current_password")
+    
+    # 업데이트할 항목이 없으면 오류
+    if username is None and new_password is None:
+        return jsonify({"error": "업데이트할 정보가 없습니다."}), 400
+    
+    # 비밀번호 변경 시 현재 비밀번호 확인 필요
+    if new_password is not None:
+        if not current_password:
+            return jsonify({"error": "현재 비밀번호를 입력해주세요."}), 400
+        
+        # 현재 비밀번호 확인
+        user = user_repository.get_by_id(user_id)
+        if not user:
+            return jsonify({"error": "사용자를 찾을 수 없습니다."}), 404
+        
+        if not check_password_hash(user["password_hash"], current_password):
+            return jsonify({"error": "현재 비밀번호가 일치하지 않습니다."}), 400
+        
+        # 새 비밀번호 유효성 검사
+        if len(new_password) < 6:
+            return jsonify({"error": "비밀번호는 6자 이상이어야 합니다."}), 400
+    
+    # 닉네임 유효성 검사
+    if username is not None:
+        if not isinstance(username, str) or len(username.strip()) < 2:
+            return jsonify({"error": "닉네임은 2자 이상이어야 합니다."}), 400
+    
+    try:
+        # 비밀번호 해시 생성
+        password_hash = None
+        if new_password is not None:
+            password_hash = generate_password_hash(new_password)
+        
+        # 사용자 정보 업데이트
+        user_repository.update_user_info(
+            user_id=user_id,
+            username=username.strip() if username else None,
+            password_hash=password_hash,
+        )
+        
+        # 업데이트된 사용자 정보 반환
+        updated_user = user_repository.get_by_id(user_id)
+        if not updated_user:
+            return jsonify({"error": "사용자를 찾을 수 없습니다."}), 404
+        
+        serialized = _serialize_user(updated_user)
+        return jsonify(serialized)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+

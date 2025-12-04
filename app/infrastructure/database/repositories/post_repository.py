@@ -3,6 +3,7 @@ from typing import Optional, Dict, Any, List
 from sqlalchemy import text
 
 from app.infrastructure.database.db import db
+from app.common.exceptions import NotFoundError, AuthorizationError
 
 
 class PostRepository:
@@ -176,6 +177,50 @@ class PostRepository:
                 {"author_id": author_id, "limit": page_size, "offset": offset},
             ).mappings().all()
             return [dict(row) for row in rows]
+
+    def update(self, post_id: int, author_id: int, title: str, content: str) -> None:
+        """게시글 수정 (작성자만 가능)"""
+        with self.database.session() as session:
+            # 작성자 확인
+            post = session.execute(
+                text("SELECT author_id FROM posts WHERE post_id = :post_id"),
+                {"post_id": post_id},
+            ).mappings().first()
+            if not post:
+                raise NotFoundError(f"게시글(ID: {post_id})을 찾을 수 없습니다.")
+            if post["author_id"] != author_id:
+                raise AuthorizationError("게시글을 수정할 권한이 없습니다.")
+            
+            # 게시글 수정
+            session.execute(
+                text(
+                    """
+                    UPDATE posts
+                    SET title = :title, content = :content, updated_at = NOW()
+                    WHERE post_id = :post_id
+                    """
+                ),
+                {"post_id": post_id, "title": title, "content": content},
+            )
+
+    def delete(self, post_id: int, author_id: int) -> None:
+        """게시글 삭제 (작성자만 가능)"""
+        with self.database.session() as session:
+            # 작성자 확인
+            post = session.execute(
+                text("SELECT author_id FROM posts WHERE post_id = :post_id"),
+                {"post_id": post_id},
+            ).mappings().first()
+            if not post:
+                raise NotFoundError(f"게시글(ID: {post_id})을 찾을 수 없습니다.")
+            if post["author_id"] != author_id:
+                raise AuthorizationError("게시글을 삭제할 권한이 없습니다.")
+            
+            # 게시글 삭제 (CASCADE로 댓글과 좋아요도 함께 삭제됨)
+            session.execute(
+                text("DELETE FROM posts WHERE post_id = :post_id"),
+                {"post_id": post_id},
+            )
 
 
 post_repository = PostRepository()

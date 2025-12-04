@@ -372,9 +372,27 @@ class AppRouter {
       ),
       GoRoute(
         path: '/write-post',
-        builder: (context, state) => WritePostPage(
-          onBack: () => context.go('/board'),
-        ),
+        builder: (context, state) {
+          final extra = state.extra;
+          if (extra is Map<String, dynamic>) {
+            final postId = extra['postId'];
+            // postId가 존재하고 0이 아닌 경우 수정 모드
+            if (postId != null && postId is int && postId > 0) {
+              // 수정 모드
+              return WritePostPage(
+                postId: postId,
+                initialTitle: extra['title']?.toString(),
+                initialContent: extra['content']?.toString(),
+                initialBoardType: extra['boardType']?.toString(),
+                onBack: () => context.go('/board'),
+              );
+            }
+          }
+          // 작성 모드
+          return WritePostPage(
+            onBack: () => context.go('/board'),
+          );
+        },
       ),
       GoRoute(
         path: '/messages',
@@ -382,7 +400,11 @@ class AppRouter {
           onBack: () => context.go('/board'),
           onOpenThread: (thread) => context.go(
             '/send-message',
-            extra: {'name': thread.peerName, 'id': thread.peerId},
+            extra: {
+              'name': thread.peerName,
+              'id': thread.peerId,
+              'isAnonymous': thread.isAnonymous,
+            },
           ),
         ),
       ),
@@ -411,16 +433,20 @@ class AppRouter {
             final peerId =
                 rawId is int ? rawId : int.tryParse(rawId?.toString() ?? '');
             if (peerId != null) {
+              final isAnonymous = extra['isAnonymous'] as bool? ?? false;
               return SendMessagePage(
                 recipientName: (extra['name'] ?? '친구') as String,
                 recipientId: peerId,
-                onBack: () => context.go('/friends'),
+                isAnonymous: isAnonymous,
+                onBack: () =>
+                    context.go(isAnonymous ? '/messages' : '/friends'),
               );
             }
           }
           return SendMessagePage(
             recipientName: '친구',
             recipientId: 0,
+            isAnonymous: false,
             onBack: () => context.go('/friends'),
           );
         },

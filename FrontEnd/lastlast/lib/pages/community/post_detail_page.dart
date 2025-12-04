@@ -28,10 +28,12 @@ class _PostDetailPageState extends State<PostDetailPage> {
   bool _loading = true;
   bool _postingComment = false;
   bool _liking = false;
+  bool _deleting = false;
   String? _error;
   final _commentCtrl = TextEditingController();
   bool _showAuthorModal = false;
   bool _sendingFriendRequest = false;
+  bool _showDeleteDialog = false;
 
   @override
   void initState() {
@@ -70,7 +72,60 @@ class _PostDetailPageState extends State<PostDetailPage> {
       }
     }
   }
-  
+
+  void _navigateToEdit() {
+    if (_detail == null) return;
+    final post = _detail!.post;
+    context.go(
+      '/write-post',
+      extra: {
+        'postId': post.id,
+        'title': post.title,
+        'content': post.content,
+        'boardType': post.boardType,
+      },
+    );
+  }
+
+  void _showDeleteConfirm() {
+    setState(() {
+      _showDeleteDialog = true;
+    });
+  }
+
+  Future<void> _deletePost() async {
+    if (_detail == null) return;
+    setState(() {
+      _deleting = true;
+      _showDeleteDialog = false;
+    });
+    try {
+      final community = CommunityScope.of(context);
+      await community.deletePost(widget.postId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('게시글이 삭제되었습니다.'),
+          backgroundColor: Color(0xFF10B981),
+        ),
+      );
+      widget.onBack?.call();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _deleting = false;
+        });
+      }
+    }
+  }
 
   Future<void> _toggleLike() async {
     if (!AuthScope.of(context).isLoggedIn) return;
@@ -201,7 +256,110 @@ class _PostDetailPageState extends State<PostDetailPage> {
             ),
           ),
           if (_showAuthorModal && _detail != null) _authorModal(),
+          if (_showDeleteDialog) _deleteDialog(),
         ],
+      ),
+    );
+  }
+
+  Widget _deleteDialog() {
+    return GestureDetector(
+      onTap: () => setState(() => _showDeleteDialog = false),
+      child: Container(
+        color: Colors.black.withValues(alpha: 0.5),
+        child: Center(
+          child: GestureDetector(
+            onTap: () {}, // 모달 내부 클릭 시 닫히지 않도록
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.redAccent,
+                    size: 48,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    '게시글 삭제',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '정말로 이 게시글을 삭제하시겠습니까?\n삭제된 게시글은 복구할 수 없습니다.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _deleting
+                              ? null
+                              : () => setState(() => _showDeleteDialog = false),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Colors.white.withValues(alpha: 0.1),
+                            foregroundColor: Colors.white70,
+                            side: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.2)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: const Text('취소'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _deleting ? null : _deletePost,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.redAccent,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: _deleting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  '삭제',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -284,7 +442,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
           Row(
             children: [
               // 오행 게시판인 경우 프로필 사진과 닉네임 함께 표시
-              if (post.category == BoardCategory.ohang && post.authorCharacterType != null) ...[
+              if (post.category == BoardCategory.ohang &&
+                  post.authorCharacterType != null) ...[
                 _buildAuthorAvatar(post.authorCharacterType!),
                 const SizedBox(width: 8),
                 post.authorName != null && post.authorName!.isNotEmpty
@@ -292,7 +451,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
                         onTap: () {
                           final currentUserId = auth.user?.id;
                           // 본인 게시글은 모달 표시 안 함
-                          if (currentUserId != null && post.authorId != currentUserId) {
+                          if (currentUserId != null &&
+                              post.authorId != currentUserId) {
                             setState(() => _showAuthorModal = true);
                           }
                         },
@@ -314,29 +474,25 @@ class _PostDetailPageState extends State<PostDetailPage> {
                         ),
                       ),
               ] else ...[
-                // 익명 게시판인 경우 기존대로 텍스트만 표시
-                post.category == BoardCategory.ohang && post.authorName != null && post.authorName!.isNotEmpty
-                    ? GestureDetector(
-                        onTap: () {
-                          final currentUserId = auth.user?.id;
-                          // 본인 게시글은 모달 표시 안 함
-                          if (currentUserId != null && post.authorId != currentUserId) {
-                            setState(() => _showAuthorModal = true);
-                          }
-                        },
-                        child: Text(
-                          post.authorLabel,
-                          style: const TextStyle(
-                            color: Color(0xFFA5F3FC),
-                            decoration: TextDecoration.underline,
-                            decorationColor: Color(0xFFA5F3FC),
-                          ),
-                        ),
-                      )
-                    : Text(
-                        post.authorLabel,
-                        style: const TextStyle(color: Color(0xFFA5F3FC)),
-                      ),
+                // 익명 게시판 또는 오행 게시판에서 작성자에게 쪽지 보내기 가능
+                GestureDetector(
+                  onTap: () {
+                    final currentUserId = auth.user?.id;
+                    // 본인 게시글은 모달 표시 안 함
+                    if (currentUserId != null &&
+                        post.authorId != currentUserId) {
+                      setState(() => _showAuthorModal = true);
+                    }
+                  },
+                  child: Text(
+                    post.authorLabel,
+                    style: const TextStyle(
+                      color: Color(0xFFA5F3FC),
+                      decoration: TextDecoration.underline,
+                      decorationColor: Color(0xFFA5F3FC),
+                    ),
+                  ),
+                ),
               ],
               const SizedBox(width: 12),
               Text(
@@ -354,12 +510,42 @@ class _PostDetailPageState extends State<PostDetailPage> {
             ),
           ),
           const SizedBox(height: 16),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                GestureDetector(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // 본인 글인 경우 수정/삭제 버튼
+              if (auth.isLoggedIn && auth.user?.id == post.authorId) ...[
+                Row(
+                  children: [
+                    TextButton.icon(
+                      onPressed: _showDeleteConfirm,
+                      icon: const Icon(Icons.delete_outline,
+                          size: 18, color: Colors.redAccent),
+                      label: const Text(
+                        '삭제',
+                        style: TextStyle(color: Colors.redAccent, fontSize: 14),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: _navigateToEdit,
+                      icon: const Icon(Icons.edit_outlined,
+                          size: 18, color: Color(0xFFFACC15)),
+                      label: const Text(
+                        '수정',
+                        style:
+                            TextStyle(color: Color(0xFFFACC15), fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                const SizedBox.shrink(),
+              ],
+              // 좋아요 버튼
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
                   onTap: auth.isLoggedIn && !_liking ? _toggleLike : null,
                   child: _liking
                       ? const SizedBox(
@@ -385,8 +571,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
                           ],
                         ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -423,12 +609,16 @@ class _PostDetailPageState extends State<PostDetailPage> {
               (comment) {
                 final auth = AuthScope.of(context);
                 final isMyComment = auth.user?.id == comment.authorId;
-                final isAuthorComment = comment.authorId == _detail?.post.authorId;
-                final isOhangBoard = _detail?.post.category == BoardCategory.ohang;
-                
+                final isAuthorComment =
+                    comment.authorId == _detail?.post.authorId;
+                final isOhangBoard =
+                    _detail?.post.category == BoardCategory.ohang;
+
                 String authorLabel;
                 // 오행 게시판인 경우 닉네임 표시
-                if (isOhangBoard && comment.authorName != null && comment.authorName!.isNotEmpty) {
+                if (isOhangBoard &&
+                    comment.authorName != null &&
+                    comment.authorName!.isNotEmpty) {
                   authorLabel = comment.authorName!;
                   // 작성자가 자신의 게시글에 댓글을 남긴 경우
                   if (isAuthorComment) {
@@ -442,7 +632,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     authorLabel = '익명(글쓴이)';
                   }
                 }
-                
+
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Container(
@@ -450,8 +640,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.04),
                       borderRadius: BorderRadius.circular(20),
-                      border:
-                          Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.08)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -462,7 +652,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
                             Text(
                               authorLabel,
                               style: TextStyle(
-                                color: isMyComment ? const Color(0xFF38BDF8) : Colors.white70,
+                                color: isMyComment
+                                    ? const Color(0xFF38BDF8)
+                                    : Colors.white70,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -565,7 +757,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${_detail!.post.authorName ?? "사용자"}님에게 친구 요청을 보냈습니다.'),
+          content:
+              Text('${_detail!.post.authorName ?? "사용자"}님에게 친구 요청을 보냈습니다.'),
           backgroundColor: const Color(0xFF10B981),
         ),
       );
@@ -588,8 +781,11 @@ class _PostDetailPageState extends State<PostDetailPage> {
   Widget _authorModal() {
     if (_detail == null) return const SizedBox.shrink();
     final post = _detail!.post;
-    final authorName = post.authorName ?? '알 수 없음';
-    
+    // 익명 게시판인 경우 "익명"으로 표시, 오행 게시판인 경우 닉네임 표시
+    final authorName = post.category == BoardCategory.anonymous
+        ? '익명'
+        : (post.authorName ?? '익명');
+
     return GestureDetector(
       onTap: () => setState(() => _showAuthorModal = false),
       child: Container(
@@ -655,9 +851,15 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     color: const Color(0xFF22D3EE),
                     onTap: () {
                       setState(() => _showAuthorModal = false);
+                      final isAnonymous =
+                          post.category == BoardCategory.anonymous;
                       context.go(
                         '/send-message',
-                        extra: {'name': authorName, 'id': post.authorId},
+                        extra: {
+                          'name': authorName,
+                          'id': post.authorId,
+                          'isAnonymous': isAnonymous,
+                        },
                       );
                     },
                   ),
@@ -690,9 +892,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
       'metal': 'assets/gold.png',
       'water': 'assets/water.png',
     };
-    
+
     final imagePath = characterImageMap[characterType.toLowerCase()];
-    
+
     return ClipOval(
       child: imagePath != null
           ? Image.asset(
@@ -735,15 +937,16 @@ class _PostDetailPageState extends State<PostDetailPage> {
       'metal': 'assets/gold.png',
       'water': 'assets/water.png',
     };
-    
+
     final imagePath = characterImageMap[characterType.toLowerCase()];
-    
+
     return Container(
       width: 70,
       height: 70,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 3),
+        border:
+            Border.all(color: Colors.white.withValues(alpha: 0.5), width: 3),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
@@ -793,7 +996,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
   }
 
   Widget _avatar(String name) {
-    final text = name.isEmpty ? '?' : String.fromCharCode(name.runes.first).toUpperCase();
+    final text = name.isEmpty
+        ? '?'
+        : String.fromCharCode(name.runes.first).toUpperCase();
     return Container(
       width: 70,
       height: 70,
@@ -802,7 +1007,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
         gradient: const LinearGradient(
           colors: [Color(0xFFFACC15), Color(0xFF22D3EE)],
         ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 3),
+        border:
+            Border.all(color: Colors.white.withValues(alpha: 0.5), width: 3),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFFFACC15).withValues(alpha: 0.4),
@@ -839,7 +1045,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
             ? const SizedBox(
                 width: 14,
                 height: 14,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white),
               )
             : Icon(icon, size: 14),
         label: Text(
@@ -850,7 +1057,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
           backgroundColor: color,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 4,
           shadowColor: color.withValues(alpha: 0.4),
         ),

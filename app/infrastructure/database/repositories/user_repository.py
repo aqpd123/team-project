@@ -113,5 +113,38 @@ class UserRepository:
                 params,
             )
 
+    def update_user_info(
+        self,
+        user_id: int,
+        username: str | None = None,
+        password_hash: str | None = None,
+    ) -> None:
+        """사용자의 기본 정보 업데이트 (닉네임, 비밀번호 등)"""
+        updates = []
+        params = {"user_id": user_id}
+        
+        if username is not None:
+            updates.append("username = :username")
+            params["username"] = username
+        
+        if password_hash is not None:
+            updates.append("password_hash = :password_hash")
+            params["password_hash"] = password_hash
+        
+        if not updates:
+            return  # 업데이트할 항목이 없으면 종료
+        
+        with self.database.session() as session:
+            session.execute(
+                text(
+                    f"""
+                    UPDATE users
+                    SET {', '.join(updates)}
+                    WHERE user_id = :user_id
+                    """
+                ),
+                params,
+            )
+
 
 user_repository = UserRepository()

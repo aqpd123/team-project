@@ -7,6 +7,7 @@ class MessageThreadModel {
     required this.lastMessage,
     required this.lastSentAt,
     required this.unreadCount,
+    this.isAnonymous = false,
   });
 
   final int peerId;
@@ -16,6 +17,7 @@ class MessageThreadModel {
   final String lastMessage;
   final DateTime? lastSentAt;
   final int unreadCount;
+  final bool isAnonymous;
 }
 
 class ChatMessageModel {
@@ -35,5 +37,3 @@ class ChatMessageModel {
   final bool isRead;
   final DateTime? createdAt;
 }
-
-

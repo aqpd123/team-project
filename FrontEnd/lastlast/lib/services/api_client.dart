@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +7,7 @@ const String defaultApiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
   // 에뮬레이터: http://10.0.2.2:5000
   // 실제 기기 (WiFi 디버깅): PC의 IP 주소 사용 (예: http://192.168.0.7:5000)
-  defaultValue: 'http://192.168.0.7:5000',
+  defaultValue: 'http://192.168.0.5:5000',
 );
 
 class ApiException implements Exception {
@@ -77,6 +77,38 @@ class ApiClient {
     );
   }
 
+  Future<Map<String, dynamic>> patch(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+  }) async {
+    return _requestMap(
+      () => _dio.patch<Map<String, dynamic>>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: _optionsWithAuth(headers: headers),
+      ),
+    );
+  }
+
+  Future<Map<String, dynamic>> put(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+  }) async {
+    return _requestMap(
+      () => _dio.put<Map<String, dynamic>>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: _optionsWithAuth(headers: headers),
+      ),
+    );
+  }
+
   Future<void> delete(
     String path, {
     Object? data,
@@ -137,7 +169,8 @@ class ApiClient {
         final parsed = jsonDecode(data);
         if (parsed is Map<String, dynamic>) {
           details = parsed;
-          message = (parsed['error'] ?? parsed['message'] ?? message).toString();
+          message =
+              (parsed['error'] ?? parsed['message'] ?? message).toString();
         }
       } catch (_) {
         // ignore decode failures
@@ -150,7 +183,10 @@ class ApiClient {
     message = _translateErrorMessage(message);
 
     // 토큰 만료 시 자동 로그아웃 처리
-    if (status == 401 && (message.contains('토큰') || message.contains('만료') || message.contains('인증'))) {
+    if (status == 401 &&
+        (message.contains('토큰') ||
+            message.contains('만료') ||
+            message.contains('인증'))) {
       onTokenExpired?.call();
     }
 
@@ -185,22 +221,22 @@ class ApiClient {
 
     // 이메일 관련 오류
     if (translated.toLowerCase().contains('email')) {
-      if (translated.toLowerCase().contains('required') || 
+      if (translated.toLowerCase().contains('required') ||
           translated.toLowerCase().contains('missing')) {
         translated = '이메일을 입력해주세요.';
-      } else if (translated.toLowerCase().contains('valid') || 
-                 translated.toLowerCase().contains('invalid')) {
+      } else if (translated.toLowerCase().contains('valid') ||
+          translated.toLowerCase().contains('invalid')) {
         translated = '올바른 이메일 주소를 입력해주세요.';
       }
     }
 
     // 비밀번호 관련 오류
     if (translated.toLowerCase().contains('password')) {
-      if (translated.toLowerCase().contains('required') || 
+      if (translated.toLowerCase().contains('required') ||
           translated.toLowerCase().contains('missing')) {
         translated = '비밀번호를 입력해주세요.';
-      } else if (translated.toLowerCase().contains('length') || 
-                 translated.toLowerCase().contains('shorter')) {
+      } else if (translated.toLowerCase().contains('length') ||
+          translated.toLowerCase().contains('shorter')) {
         if (translated.contains('6')) {
           translated = '비밀번호는 최소 6자 이상이어야 합니다.';
         } else {
@@ -211,7 +247,7 @@ class ApiClient {
 
     // 사용자명 관련 오류
     if (translated.toLowerCase().contains('username')) {
-      if (translated.toLowerCase().contains('required') || 
+      if (translated.toLowerCase().contains('required') ||
           translated.toLowerCase().contains('missing')) {
         translated = '사용자명을 입력해주세요.';
       } else if (translated.toLowerCase().contains('length')) {
@@ -223,8 +259,8 @@ class ApiClient {
     for (final entry in translations.entries) {
       if (translated.toLowerCase().contains(entry.key.toLowerCase())) {
         // 이미 특정 오류로 변환된 경우 스킵
-        if (!translated.contains('이메일') && 
-            !translated.contains('비밀번호') && 
+        if (!translated.contains('이메일') &&
+            !translated.contains('비밀번호') &&
             !translated.contains('사용자명')) {
           translated = translated.replaceAll(entry.key, entry.value);
         }
@@ -234,5 +270,3 @@ class ApiClient {
     return translated;
   }
 }
-
-

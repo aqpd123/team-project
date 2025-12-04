@@ -9,11 +9,13 @@ class SendMessagePage extends StatefulWidget {
     super.key,
     required this.recipientName,
     required this.recipientId,
+    this.isAnonymous = false,
     this.onBack,
   });
 
   final String recipientName;
   final int recipientId;
+  final bool isAnonymous; // 익명 게시판에서 보낸 쪽지 여부
   final VoidCallback? onBack;
 
   @override
@@ -29,7 +31,8 @@ class _SendMessagePageState extends State<SendMessagePage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      MessageScope.of(context).loadConversation(widget.recipientId);
+      MessageScope.of(context).loadConversation(widget.recipientId,
+          isAnonymous: widget.isAnonymous);
       _initialized = true;
     }
   }
@@ -46,9 +49,11 @@ class _SendMessagePageState extends State<SendMessagePage> {
     if (text.isEmpty) return;
     _messageController.clear();
     final scope = MessageScope.of(context);
-    await scope.sendMessage(widget.recipientId, text);
+    await scope.sendMessage(widget.recipientId, text,
+        isAnonymous: widget.isAnonymous);
     if (!mounted) return;
-    await scope.loadConversation(widget.recipientId);
+    await scope.loadConversation(widget.recipientId,
+        isAnonymous: widget.isAnonymous);
     if (!mounted) return;
     _scrollToBottom();
   }
@@ -75,7 +80,7 @@ class _SendMessagePageState extends State<SendMessagePage> {
         systemNavigationBarDividerColor: Colors.transparent,
       ),
     );
-    
+
     final auth = AuthScope.of(context);
     final controller = MessageScope.of(context);
     final currentUserId = auth.user?.id ?? 0;
@@ -89,7 +94,8 @@ class _SendMessagePageState extends State<SendMessagePage> {
             child: AnimatedBuilder(
               animation: controller,
               builder: (context, _) {
-                final messages = controller.conversationFor(widget.recipientId);
+                final messages = controller.conversationFor(widget.recipientId,
+                    isAnonymous: widget.isAnonymous);
                 return Column(
                   children: [
                     _buildHeader(),
@@ -105,12 +111,17 @@ class _SendMessagePageState extends State<SendMessagePage> {
                               ? '${message.createdAt!.hour.toString().padLeft(2, '0')}:${message.createdAt!.minute.toString().padLeft(2, '0')}'
                               : '';
                           return Align(
-                            alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
+                            alignment: isMine
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
                             child: Container(
                               margin: const EdgeInsets.symmetric(vertical: 4),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 10),
                               decoration: BoxDecoration(
-                                color: isMine ? const Color(0xFFFACC15) : Colors.white,
+                                color: isMine
+                                    ? const Color(0xFFFACC15)
+                                    : Colors.white,
                                 borderRadius: BorderRadius.only(
                                   topLeft: const Radius.circular(18),
                                   topRight: const Radius.circular(18),
@@ -126,13 +137,16 @@ class _SendMessagePageState extends State<SendMessagePage> {
                                 ],
                               ),
                               child: Column(
-                                crossAxisAlignment:
-                                    isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                crossAxisAlignment: isMine
+                                    ? CrossAxisAlignment.end
+                                    : CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     message.content,
                                     style: TextStyle(
-                                      color: isMine ? Colors.black : Colors.black87,
+                                      color: isMine
+                                          ? Colors.black
+                                          : Colors.black87,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -199,7 +213,8 @@ class _SendMessagePageState extends State<SendMessagePage> {
             backgroundColor: const Color(0xFFFACC15).withValues(alpha: 0.3),
             child: Text(
               initial,
-              style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  color: Colors.black87, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(width: 12),
@@ -256,7 +271,8 @@ class _SendMessagePageState extends State<SendMessagePage> {
               backgroundColor: const Color(0xFF6366F1),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18)),
             ),
             child: controller.isSending
                 ? const SizedBox(
@@ -274,5 +290,3 @@ class _SendMessagePageState extends State<SendMessagePage> {
     );
   }
 }
-
-

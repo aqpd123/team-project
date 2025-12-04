@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controllers/auth_controller.dart';
 import '../../services/api_client.dart';
@@ -81,7 +82,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     super.dispose();
   }
 
-
   Future<void> _handleCurrentPasswordVerification() async {
     if (_currentPasswordCtrl.text.trim().isEmpty) {
       _showSnackBar('현재 비밀번호를 입력해주세요.');
@@ -130,6 +130,11 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   }
 
   Future<void> _handlePasswordChange() async {
+    if (!_isCurrentPasswordVerified) {
+      _showSnackBar('먼저 현재 비밀번호를 확인해주세요.');
+      return;
+    }
+
     if (_newPasswordCtrl.text != _confirmPasswordCtrl.text) {
       _showSnackBar('새 비밀번호가 일치하지 않습니다.');
       return;
@@ -139,15 +144,55 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       return;
     }
 
-    // 비밀번호 변경 로직
-    _showSnackBar('비밀번호가 변경되었습니다.');
+    final auth = AuthScope.of(context);
+    if (auth.user == null) {
+      _showSnackBar('로그인이 필요합니다.');
+      return;
+    }
+
     setState(() {
-      _currentPasswordCtrl.clear();
-      _newPasswordCtrl.clear();
-      _confirmPasswordCtrl.clear();
-      _isCurrentPasswordVerified = false;
-      _showPasswordChangeForm = false;
+      _isLoading = true;
     });
+
+    try {
+      final api = ApiClient();
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      if (token != null) {
+        api.updateToken(token);
+      }
+
+      // 비밀번호 변경 API 호출
+      await api.patch(
+        '/users/${auth.user!.id}',
+        data: {
+          'current_password': _currentPasswordCtrl.text,
+          'new_password': _newPasswordCtrl.text,
+        },
+      );
+
+      if (!mounted) return;
+      _showSnackBar('비밀번호가 변경되었습니다.');
+      setState(() {
+        _currentPasswordCtrl.clear();
+        _newPasswordCtrl.clear();
+        _confirmPasswordCtrl.clear();
+        _isCurrentPasswordVerified = false;
+        _showPasswordChangeForm = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      _showSnackBar('비밀번호 변경 실패: ${e.message}');
+    } catch (e) {
+      if (!mounted) return;
+      _showSnackBar('비밀번호 변경 중 오류가 발생했습니다.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _handleNicknameChange() async {
@@ -156,8 +201,50 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       return;
     }
 
-    // 닉네임 변경 로직
-    _showSnackBar('닉네임이 변경되었습니다.');
+    final auth = AuthScope.of(context);
+    if (auth.user == null) {
+      _showSnackBar('로그인이 필요합니다.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final api = ApiClient();
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      if (token != null) {
+        api.updateToken(token);
+      }
+
+      // 닉네임 변경 API 호출
+      await api.patch(
+        '/users/${auth.user!.id}',
+        data: {
+          'username': _nicknameCtrl.text.trim(),
+        },
+      );
+
+      // 사용자 정보 새로고침
+      await auth.refreshUser();
+
+      if (!mounted) return;
+      _showSnackBar('닉네임이 변경되었습니다.');
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      _showSnackBar('닉네임 변경 실패: ${e.message}');
+    } catch (e) {
+      if (!mounted) return;
+      _showSnackBar('닉네임 변경 중 오류가 발생했습니다.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _resetPasswordChange() {
@@ -363,11 +450,13 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                    borderSide:
+                        BorderSide(color: Colors.white.withValues(alpha: 0.2)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                    borderSide:
+                        BorderSide(color: Colors.white.withValues(alpha: 0.2)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -378,21 +467,31 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
             ),
             const SizedBox(width: 12),
             ElevatedButton(
-              onPressed: _handleNicknameChange,
+              onPressed: _isLoading ? null : _handleNicknameChange,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFACC15),
                 foregroundColor: const Color(0xFF0F172A),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
               ),
-              child: const Text(
-                '변경',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFF0F172A),
+                      ),
+                    )
+                  : const Text(
+                      '변경',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
           ],
         ),
@@ -465,7 +564,8 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white.withValues(alpha: 0.1),
                     foregroundColor: Colors.white,
-                    side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                    side:
+                        BorderSide(color: Colors.white.withValues(alpha: 0.2)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
@@ -477,7 +577,8 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleCurrentPasswordVerification,
+                  onPressed:
+                      _isLoading ? null : _handleCurrentPasswordVerification,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFACC15),
                     foregroundColor: const Color(0xFF0F172A),
@@ -562,7 +663,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
             const SizedBox(width: 12),
             Expanded(
               child: ElevatedButton(
-                onPressed: _handlePasswordChange,
+                onPressed: _isLoading ? null : _handlePasswordChange,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFACC15),
                   foregroundColor: const Color(0xFF0F172A),
@@ -571,10 +672,19 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-                child: const Text(
-                  '비밀번호 변경',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Color(0xFF0F172A),
+                        ),
+                      )
+                    : const Text(
+                        '비밀번호 변경',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
               ),
             ),
           ],
@@ -615,11 +725,13 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+              borderSide:
+                  BorderSide(color: Colors.white.withValues(alpha: 0.2)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+              borderSide:
+                  BorderSide(color: Colors.white.withValues(alpha: 0.2)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
@@ -863,7 +975,8 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white.withValues(alpha: 0.1),
                         foregroundColor: Colors.white70,
-                        side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                        side: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.2)),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),

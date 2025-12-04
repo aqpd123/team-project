@@ -13,6 +13,7 @@ bp = Blueprint("messages", __name__, url_prefix="/messages")
 class MessageSendSchema(BaseSchema):
     recipient_id = fields.Int(required=True)
     content = fields.Str(required=True, validate=validate.Length(min=1))
+    is_anonymous = fields.Bool(load_default=False)  # 익명 게시판에서 보낸 쪽지 여부
 
 
 def _error_response(exc: AppError):
@@ -35,6 +36,7 @@ def send_message():
             sender_id=current_user["user_id"],
             recipient_id=payload["recipient_id"],
             content=payload["content"],
+            is_anonymous=payload.get("is_anonymous", False),
         )
         return jsonify({"message": data}), 201
     except AppError as exc:
@@ -49,9 +51,16 @@ def list_threads():
     offset = int(request.args.get("offset", 0))
     try:
         items = message_service.list_threads(current_user["user_id"], limit=limit, offset=offset)
+        print(f"list_threads: Returning {len(items)} items for user {current_user['user_id']}")
         return jsonify({"items": items, "count": len(items)})
     except AppError as exc:
+        print(f"list_threads: AppError - {exc}")
         return _error_response(exc)
+    except Exception as exc:
+        print(f"list_threads: Unexpected error - {exc}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "서버 오류가 발생했습니다."}), 500
 
 
 @bp.get("/conversations/<int:peer_id>")
@@ -61,12 +70,14 @@ def list_conversation(peer_id: int):
     limit = min(int(request.args.get("limit", 50)), 200)
     before_id = request.args.get("before_id")
     before = int(before_id) if before_id else None
+    is_anonymous = request.args.get("is_anonymous", "false").lower() == "true"
     try:
         items = message_service.list_conversation(
             user_id=current_user["user_id"],
             other_id=peer_id,
             limit=limit,
             before_id=before,
+            is_anonymous=is_anonymous,
         )
         return jsonify({"items": items, "count": len(items)})
     except AppError as exc:
@@ -77,8 +88,9 @@ def list_conversation(peer_id: int):
 @require_auth()
 def mark_conversation_read(peer_id: int):
     current_user = get_current_user()
+    is_anonymous = request.args.get("is_anonymous", "false").lower() == "true"
     try:
-        message_service.mark_read(current_user["user_id"], peer_id)
+        message_service.mark_read(current_user["user_id"], peer_id, is_anonymous=is_anonymous)
         return jsonify({"status": "ok"})
     except AppError as exc:
         return _error_response(exc)

@@ -200,8 +200,8 @@ class _BoardPageState extends State<BoardPage> {
                     const SizedBox(height: 16),
                     // 오행 게시판 탭에서는 검색 필드 숨김
                     if (_activeTab != BoardCategory.ohang) ...[
-                      _searchField(),
-                      const SizedBox(height: 16),
+                    _searchField(),
+                    const SizedBox(height: 16),
                     ],
                     if (_activeTab == BoardCategory.ohang) ...[
                       _ohangLinks(),
@@ -217,7 +217,7 @@ class _BoardPageState extends State<BoardPage> {
                               ? _emptyState()
                               : _activeTab == BoardCategory.ohang
                                   ? const SizedBox.shrink() // 오행 게시판 탭에서는 빈 상태 메시지 숨김
-                                  : RefreshIndicator(
+                              : RefreshIndicator(
                                   onRefresh: community.refreshPosts,
                                   child: LayoutBuilder(
                                     builder: (context, constraints) {
