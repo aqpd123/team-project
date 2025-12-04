@@ -186,19 +186,22 @@ class MessageController extends ChangeNotifier {
             ? int.tryParse(unreadCountRaw) ?? 0
             : 0);
 
+    final characterType = peer?['character_type'] as String?;
+    
     print(
-        '_mapThread: peerId=$peerId, peerName=$peerName, isAnonymous=$isAnonymous, content=$content, unreadCount=$unreadCount');
+        '_mapThread: peerId=$peerId, peerName=$peerName, isAnonymous=$isAnonymous, content=$content, unreadCount=$unreadCount, characterType=$characterType');
 
     return MessageThreadModel(
       peerId: peerId,
       peerName: peerName,
       peerEmail: peerEmail,
       elementLabel:
-          isAnonymous ? '익명' : _elementFromCharacter(peer?['character_type']),
+          isAnonymous ? '익명' : _elementFromCharacter(characterType),
       lastMessage: content,
       lastSentAt: _parseDate(createdAt),
       unreadCount: unreadCount,
       isAnonymous: isAnonymous,
+      characterType: characterType,
     );
   }
 

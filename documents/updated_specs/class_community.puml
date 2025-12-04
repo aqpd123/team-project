@@ -1,0 +1,91 @@
+@startuml community_상세
+
+left to right direction
+skinparam linetype ortho
+
+' 서비스 레이어 (상단)
+class CommunityService {
+  +create_post(author_id:int, title:str, content:str, board_type:str): int
+  +get_post(post_id:int, user_id:int): Dict[str,Any]
+  +list_posts(page:int, page_size:int): List[Dict[str,Any]]
+  +list_my_posts(author_id:int, page:int, page_size:int): List[Dict[str,Any]]
+  +add_comment(post_id:int, author_id:int, content:str): int
+  +toggle_like(post_id:int, user_id:int): tuple[bool, int]
+  +update_post(post_id:int, user_id:int, title:str, content:str): void
+  +delete_post(post_id:int, user_id:int): void
+}
+
+class CompatibilityService {
+  +request_compatibility(requester_id:int, target_id:int, message:str): int
+  +accept_compatibility(request_id:int, actor_id:int, accept:bool): Optional[Dict[str,Any]]
+  +get_request(request_id:int): Dict[str,Any]
+  +calculate_for_users(user_id_1:int, user_id_2:int): Dict[str,float]
+}
+
+class FriendService {
+  +create_friendship_request(requester_id:int, addressee_id:int): int
+  +respond_to_request(friendship_id:int, actor_id:int, accept:bool): Dict[str,Any]
+  +list_friendships(user_id:int, status:str): List[Dict[str,Any]]
+  +delete_friendship(friendship_id:int, actor_id:int): void
+}
+
+class MessageService {
+  +send_message(sender_id:int, recipient_id:int, content:str): int
+  +get_threads(user_id:int, limit:int, offset:int): List[Dict[str,Any]]
+  +get_conversation(user_id:int, peer_id:int, limit:int, before_id:int): List[Dict[str,Any]]
+  +mark_as_read(user_id:int, peer_id:int): void
+}
+
+' 데이터베이스 매니저 (중간)
+class DatabaseManager
+
+' 엔티티 클래스들 (하단, 가로 배치)
+class User {
+  +user_id: int
+  +username: str
+  +email: str
+  +character_type: str
+}
+
+class Post {
+  +post_id: int
+  +author_id: int
+  +title: str
+  +content: str
+  +board_type: str
+  +created_at: datetime
+  +updated_at: datetime
+  +view_count: int
+  +like_count: int
+}
+
+class Comment {
+  +comment_id: int
+  +post_id: int
+  +author_id: int
+  +content: str
+  +anonymous_number: int
+  +created_at: datetime
+  +updated_at: datetime
+}
+
+class CompatibilityRequest {
+  +request_id: int
+  +requester_id: int
+  +target_id: int
+  +status: str
+}
+
+' 서비스 -> DatabaseManager 관계
+CommunityService ..> DatabaseManager
+CompatibilityService ..> DatabaseManager
+FriendService ..> DatabaseManager
+MessageService ..> DatabaseManager
+
+' 엔티티 간 관계 (가로 배치를 위한 순서 조정)
+User "1" -- "0..*" Post : creates
+User "1" -- "0..*" CompatibilityRequest : requests
+Post "1" *-- "0..*" Comment : has
+
+@enduml
+

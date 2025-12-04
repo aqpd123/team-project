@@ -192,8 +192,8 @@ class GanjiCalculator:
         )
 
     def _ensure_range(self, year: int) -> None:
-        if year < 1904 or year >= 2100:
-            raise ValidationError("지원하지 않는 연도입니다. (1904~2099)")
+        if year < 2000 or year > 2010:
+            raise ValidationError("지원하지 않는 연도입니다. (2000~2010)")
 
     def _calendar_row(self, year: int) -> np.ndarray:
         if self._calendar is None:

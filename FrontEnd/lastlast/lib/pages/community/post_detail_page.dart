@@ -853,10 +853,11 @@ class _PostDetailPageState extends State<PostDetailPage> {
                     children: [
                       Row(
                         children: [
-                          // 오행 캐릭터 타입이 있으면 캐릭터 이미지, 없으면 기본 아바타
-                          post.authorCharacterType != null
-                              ? _buildAuthorAvatarModal(post.authorCharacterType!)
-                              : _avatar(authorName),
+                          // 익명 게시판인 경우 기본 아바타만 표시 (익명성 보장)
+                          // 오행 게시판인 경우에만 오행 캐릭터 이미지 표시
+                          (post.category == BoardCategory.anonymous || post.authorCharacterType == null)
+                              ? _avatar(authorName)
+                              : _buildAuthorAvatarModal(post.authorCharacterType!),
                           const SizedBox(width: 16),
                           Expanded(
                             child: Column(

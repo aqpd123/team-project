@@ -1,0 +1,62 @@
+@startuml 궁합요청_수락
+
+autonumber
+
+actor Author as A
+participant BoardUI as B
+participant "CompatibilityController\n(Flask API)" as CC
+participant "CompatibilityService" as CS
+participant "CompatibilityRepository" as CR
+participant "UserRepository" as UR
+participant "SajuCalculator" as SC
+database DB
+
+A -> B: 요청 알림 확인
+B -> CC: POST /compatibility/requests/{request_id}/response {accept: true/false}
+CC -> CC: require_auth() - 토큰 검증
+CC -> CC: get_current_user() - 현재 사용자 확인
+CC -> CS: accept_compatibility(request_id, actor_id, accept)
+CS -> CR: get(request_id)
+CR -> DB: SELECT compatibility_request WHERE request_id = ?
+DB --> CR: request record
+CR --> CS: request data
+alt 요청 없음
+  CS --> CC: NotFoundError
+  CC --> B: 404 Not Found
+  B --> A: 요청을 찾을 수 없음
+else 요청 존재
+  CS -> CS: 상태 확인 (pending인지)
+  CS -> CS: 권한 확인 (actor_id == target_id)
+  alt accept == true
+    CS -> UR: get_by_id(requester_id)
+    UR -> DB: SELECT user WHERE user_id = ?
+    DB --> UR: requester user
+    UR --> CS: requester data
+    CS -> UR: get_by_id(target_id)
+    UR -> DB: SELECT user WHERE user_id = ?
+    DB --> UR: target user
+    UR --> CS: target data
+    CS -> CS: _load_saju(requester) - JSON 파싱
+    CS -> CS: _load_saju(target) - JSON 파싱
+    CS -> SC: calculate_compatibility(saju1, saju2, gender1, gender2)
+    SC --> CS: {original, final, stress}
+    CS -> CS: _build_description(final_score)
+    CS -> CR: set_response(request_id, accept=True, scores, description)
+  else accept == false
+    CS -> CS: description = "요청이 거절되었습니다."
+    CS -> CR: set_response(request_id, accept=False, scores=None, description)
+  end
+  CR -> DB: UPDATE compatibility_request SET status, result_original, result_final, stress, compatibility_result
+  DB --> CR: ok
+  CS -> CS: 알림 생성 (compatibility_resolved)
+  CS -> CR: get(request_id) - 업데이트된 요청 조회
+  CR -> DB: SELECT compatibility_request WHERE request_id = ?
+  DB --> CR: updated request
+  CR --> CS: updated request data
+  CS --> CC: request data
+  CC --> B: 200 OK
+  B --> A: 결과 표시
+end
+
+@enduml
+

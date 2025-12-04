@@ -8,8 +8,8 @@ from .utils import HEAVENLY_STEMS, EARTHLY_BRANCHES
 
 class DataValidator:
     def validate_birth_date(self, year: int, month: int, day: int) -> None:
-        if not (1900 <= year <= 2100):
-            raise ValidationError("연도는 1900~2100 범위여야 합니다.")
+        if not (2000 <= year <= 2010):
+            raise ValidationError("연도는 2000~2010 범위여야 합니다.")
         if not (1 <= month <= 12):
             raise ValidationError("월은 1~12 범위여야 합니다.")
         if not (1 <= day <= 31):

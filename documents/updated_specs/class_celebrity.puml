@@ -1,0 +1,31 @@
+@startuml celebrity_상세
+
+top to bottom direction
+skinparam linetype ortho
+
+class Celebrity {
+  +id: int
+  +name: str
+  +description: str
+  +category: str
+  +gender: int
+  +saju: Dict[str,str]
+  +thumbnail: str
+}
+
+class CelebrityService {
+  +list_celebrities(keyword:Optional[str]): List[Dict[str,Any]]
+  +get_celebrity(celebrity_id:int): Dict[str,Any]
+  +calculate_with_celebrity(user_saju:Dict[str,str], celebrity_id:int, user_gender:int, use_ai:bool): Dict[str,Any]
+  +get_compatibility_description(scores:Dict[str,float]): str
+}
+
+class SajuCalculator
+class DatabaseManager
+
+CelebrityService ..> SajuCalculator : calculate
+CelebrityService ..> DatabaseManager
+CelebrityService --> Celebrity : manages
+
+@enduml
+

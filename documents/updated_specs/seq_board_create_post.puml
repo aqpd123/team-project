@@ -1,0 +1,42 @@
+@startuml 게시글_작성
+
+autonumber
+
+actor User as U
+participant BoardUI as B
+participant "PostController\n(Flask API)" as PC
+participant "CommunityService" as CS
+participant "PostRepository" as PR
+database DB
+
+U -> B: 글쓰기 제출 {title, content, board_type}
+B -> PC: POST /posts {...}
+PC -> PC: require_auth() - 토큰 검증
+PC -> PC: get_current_user() - 현재 사용자 확인
+PC -> CS: create_post(author_id, title, content, board_type)
+CS -> CS: _ensure_user(author_id)
+CS -> PR: create(author_id, title, content, board_type)
+PR -> DB: INSERT posts
+alt 성공
+  DB --> PR: new post_id
+  PR --> CS: post_id
+  CS -> CS: 알림 생성 (선택적)
+  CS --> PC: post_id
+  PC -> CS: get_post(post_id)
+  CS -> PR: get(post_id)
+  PR -> DB: SELECT post + 댓글 정보
+  DB --> PR: post data
+  PR --> CS: post record
+  CS --> PC: {post: {...}}
+  PC --> B: 201 Created {post: {...}}
+  B --> U: 작성 완료
+else 실패(검증/DB)
+  DB --> PR: error
+  PR --> CS: error
+  CS --> PC: ValidationError/NotFoundError
+  PC --> B: 400/404/500 에러 코드+메시지
+  B --> U: 수정/재시도 안내
+end
+
+@enduml
+

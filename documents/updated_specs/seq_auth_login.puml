@@ -1,0 +1,36 @@
+@startuml 인증_로그인
+
+autonumber
+
+actor User as U
+participant FlutterApp as F
+participant "AuthController\n(Flask API)" as AC
+participant "UserRepository" as UR
+database DB
+
+U -> F: 로그인 제출
+F -> AC: POST /auth/login {email, password}
+AC -> UR: get_by_email(email)
+UR -> DB: SELECT user WHERE email = ?
+alt 사용자 존재
+  DB --> UR: user + password_hash
+  UR --> AC: user
+  AC -> AC: check_password_hash(password_hash, password)
+  alt 비밀번호 일치
+    AC -> AC: generate_jwt({user_id, email})
+    AC --> F: 200 {token, user}
+    F --> U: 로그인 성공
+  else 비밀번호 불일치
+    AC --> F: 401 Unauthorized
+    F --> U: 오류 안내
+  end
+else 사용자 없음
+  UR --> AC: None
+  AC --> F: 401 Unauthorized
+  F --> U: 오류 안내
+end
+
+참고: 현재 구현에서는 refresh 토큰 기능이 없습니다. 토큰은 단일 JWT로만 발급됩니다.
+
+@enduml
+

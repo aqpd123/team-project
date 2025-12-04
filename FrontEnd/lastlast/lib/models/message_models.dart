@@ -8,6 +8,7 @@ class MessageThreadModel {
     required this.lastSentAt,
     required this.unreadCount,
     this.isAnonymous = false,
+    this.characterType,
   });
 
   final int peerId;
@@ -18,6 +19,7 @@ class MessageThreadModel {
   final DateTime? lastSentAt;
   final int unreadCount;
   final bool isAnonymous;
+  final String? characterType; // 영어 오행 타입 ('wood', 'fire', etc.)
 }
 
 class ChatMessageModel {

@@ -172,9 +172,6 @@ class _ThreadTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initial = thread.peerName.isEmpty
-        ? '?'
-        : String.fromCharCode(thread.peerName.runes.first).toUpperCase();
     final dateLabel = thread.lastSentAt != null
         ? '${thread.lastSentAt!.month.toString().padLeft(2, '0')}/${thread.lastSentAt!.day.toString().padLeft(2, '0')}'
         : '';
@@ -189,11 +186,7 @@ class _ThreadTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: Colors.white.withValues(alpha: 0.1),
-              child: Text(initial, style: const TextStyle(color: Colors.white)),
-            ),
+            _buildAvatar(),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -246,6 +239,68 @@ class _ThreadTile extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatar() {
+    // 익명인 경우 기본 아바타
+    if (thread.isAnonymous) {
+      final initial = thread.peerName.isEmpty
+          ? '?'
+          : String.fromCharCode(thread.peerName.runes.first).toUpperCase();
+      return CircleAvatar(
+        radius: 28,
+        backgroundColor: Colors.white.withValues(alpha: 0.1),
+        child: Text(initial, style: const TextStyle(color: Colors.white)),
+      );
+    }
+
+    // 오행에 따른 이미지 파일명 매핑
+    final characterImageMap = {
+      'wood': 'assets/tree.png',
+      'fire': 'assets/fire.png',
+      'earth': 'assets/land.png',
+      'metal': 'assets/gold.png',
+      'water': 'assets/water.png',
+    };
+
+    final imagePath = thread.characterType != null
+        ? characterImageMap[thread.characterType!.toLowerCase()]
+        : null;
+
+    final initial = thread.peerName.isEmpty
+        ? '?'
+        : String.fromCharCode(thread.peerName.runes.first).toUpperCase();
+
+    return ClipOval(
+      child: imagePath != null
+          ? Image.asset(
+              imagePath,
+              width: 56,
+              height: 56,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return _buildFallbackAvatar(initial);
+              },
+            )
+          : _buildFallbackAvatar(initial),
+    );
+  }
+
+  Widget _buildFallbackAvatar(String initial) {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          initial,
+          style: const TextStyle(color: Colors.white, fontSize: 20),
         ),
       ),
     );

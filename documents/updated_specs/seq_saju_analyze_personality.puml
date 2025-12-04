@@ -1,0 +1,44 @@
+@startuml 개인성격분석_요청
+
+autonumber
+
+actor User as U
+participant FlutterApp as F
+participant "SajuController\n(Flask API)" as SCT
+participant "SajuCalculator" as SC
+participant "PersonalityAnalyzer" as PA
+participant "CharacterSystem" as CS
+participant "DataValidator" as DV
+
+U -> F: 개인 성격 분석 버튼
+F -> SCT: POST /saju/traits {saju, gender}
+SCT -> SCT: load_json(SajuTraitsSchema)
+SCT -> SC: analyze_personality(saju, gender)
+SC -> DV: validate_saju_data(saju)
+DV --> SC: ok
+SC -> SC: calculate_personal_traits(saju)
+SC -> PA: analyze_five_elements(saju)
+PA --> SC: {wood, fire, earth, metal, water}
+SC -> PA: calculate_8_traits(saju)
+PA --> SC: {passion, intuition, mood_swing, courage, responsibility, conflict, charisma, independence}
+SC -> PA: generate_personality_report(traits)
+PA --> SC: report string
+SC -> SC: calculate_personality_flags_hd2(saju, gender)
+SC --> SC: {flags, sal}
+SC -> CS: determine(five_elements_scores)
+CS --> SC: character_type (wood/fire/earth/metal/water)
+SC --> SCT: {five, traits, flags, report, character}
+SCT -> SCT: result["character"] = character_type
+SCT -> SCT: result["saju"] = saju
+SCT --> F: 200 {five, traits, flags, report, character, saju}
+F --> U: 결과 화면 표시
+
+alt 검증 실패
+  DV --> SC: ValidationError
+  SC --> SCT: ValidationError
+  SCT --> F: 400 잘못된 입력(날짜/필드 누락)
+  F --> U: 수정 안내
+end
+
+@enduml
+

@@ -73,6 +73,7 @@ class SajuApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: '신비한 사주',
+      debugShowCheckedModeBanner: false, // 디버그 배너 제거
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,

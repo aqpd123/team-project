@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../controllers/auth_controller.dart';
 import '../../controllers/message_controller.dart';
+import '../../models/message_models.dart';
 
 class SendMessagePage extends StatefulWidget {
   const SendMessagePage({
@@ -186,9 +187,23 @@ class _SendMessagePageState extends State<SendMessagePage> {
   }
 
   Widget _buildHeader() {
-    final initial = widget.recipientName.isEmpty
-        ? '?'
-        : String.fromCharCode(widget.recipientName.runes.first).toUpperCase();
+    // recipientId로부터 characterType 가져오기
+    final controller = MessageScope.of(context);
+    final threads = controller.threads;
+    final thread = threads.firstWhere(
+      (t) => t.peerId == widget.recipientId && t.isAnonymous == widget.isAnonymous,
+      orElse: () => MessageThreadModel(
+        peerId: widget.recipientId,
+        peerName: widget.recipientName,
+        peerEmail: null,
+        elementLabel: '',
+        lastMessage: '',
+        lastSentAt: null,
+        unreadCount: 0,
+        isAnonymous: widget.isAnonymous,
+      ),
+    );
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -208,15 +223,7 @@ class _SendMessagePageState extends State<SendMessagePage> {
             child: const Icon(Icons.arrow_back, color: Colors.black87),
           ),
           const SizedBox(width: 12),
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: const Color(0xFFFACC15).withValues(alpha: 0.3),
-            child: Text(
-              initial,
-              style: const TextStyle(
-                  color: Colors.black87, fontWeight: FontWeight.bold),
-            ),
-          ),
+          _buildAvatar(thread),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,12 +237,73 @@ class _SendMessagePageState extends State<SendMessagePage> {
                 ),
               ),
               const Text(
-                '온라인',
+                '오프라인',
                 style: TextStyle(color: Colors.grey, fontSize: 12),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar(MessageThreadModel thread) {
+    // 익명인 경우 기본 아바타
+    if (thread.isAnonymous) {
+      final initial = widget.recipientName.isEmpty
+          ? '?'
+          : String.fromCharCode(widget.recipientName.runes.first).toUpperCase();
+      return CircleAvatar(
+        radius: 20,
+        backgroundColor: const Color(0xFFFACC15).withValues(alpha: 0.3),
+        child: Text(
+          initial,
+          style: const TextStyle(
+              color: Colors.black87, fontWeight: FontWeight.bold),
+        ),
+      );
+    }
+
+    // 오행에 따른 이미지 파일명 매핑
+    final characterImageMap = {
+      'wood': 'assets/tree.png',
+      'fire': 'assets/fire.png',
+      'earth': 'assets/land.png',
+      'metal': 'assets/gold.png',
+      'water': 'assets/water.png',
+    };
+
+    final imagePath = thread.characterType != null
+        ? characterImageMap[thread.characterType!.toLowerCase()]
+        : null;
+
+    final initial = widget.recipientName.isEmpty
+        ? '?'
+        : String.fromCharCode(widget.recipientName.runes.first).toUpperCase();
+
+    return ClipOval(
+      child: imagePath != null
+          ? Image.asset(
+              imagePath,
+              width: 40,
+              height: 40,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return _buildFallbackAvatar(initial);
+              },
+            )
+          : _buildFallbackAvatar(initial),
+    );
+  }
+
+  Widget _buildFallbackAvatar(String initial) {
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: const Color(0xFFFACC15).withValues(alpha: 0.3),
+      child: Text(
+        initial,
+        style: const TextStyle(
+            color: Colors.black87, fontWeight: FontWeight.bold),
       ),
     );
   }

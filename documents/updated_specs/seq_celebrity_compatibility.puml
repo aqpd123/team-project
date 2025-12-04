@@ -1,0 +1,47 @@
+@startuml 유명인_궁합보기
+
+autonumber
+
+actor User as U
+participant FlutterApp as F
+participant "CelebrityController\n(Flask API)" as CCT
+participant "CelebrityService" as CS
+participant "CelebrityRepository" as CR
+participant "SajuCalculator" as SC
+database DB
+
+U -> F: 유명인과 궁합 보기
+F -> CCT: GET /celebrities?keyword=
+CCT -> CS: list_celebrities(keyword)
+CS -> CR: list(keyword)
+CR -> DB: SELECT celebrities WHERE keyword LIKE ...
+DB --> CR: list
+CR --> CS: celebrity list
+CS -> CS: _celebrity_summary() - 각 유명인 정보 요약
+CS --> CCT: list
+CCT --> F: 200 {items: [...], count: N}
+F --> U: 유명인 목록 표시
+
+U -> F: 특정 유명인 선택
+F -> CCT: POST /celebrities/{id}/compatibility {saju, gender}
+CCT -> CS: calculate_with_celebrity(user_saju, celebrity_id, user_gender, use_ai)
+CS -> CS: _require_celebrity(celebrity_id)
+CS -> CR: get_by_id(celebrity_id)
+CR -> DB: SELECT celebrity WHERE celebrity_id = ?
+DB --> CR: celebrity record
+CR --> CS: Celebrity 객체
+CS -> CS: _celebrity_summary(celebrity) - 오행 계산 포함
+CS -> SC: calculate_compatibility(user_saju, celeb.saju, user_gender, celeb.gender)
+SC --> CS: {original, final, stress}
+CS -> CS: _describe(final_score) - 기본 설명 생성
+alt AI 인사이트 생성 (use_ai=True)
+  CS -> CS: Gemini API 호출 - 카테고리별 인사이트 생성
+  CS --> CS: insights {연애, 우정, 직장}
+end
+CS -> CS: _get_element_relationship() - 오행 관계 설명
+CS --> CCT: {celebrity, scores, description, insights, element_relationship}
+CCT --> F: 200 result
+F --> U: 결과 표시
+
+@enduml
+

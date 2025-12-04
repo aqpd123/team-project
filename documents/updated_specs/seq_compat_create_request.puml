@@ -1,0 +1,47 @@
+@startuml 궁합요청_생성
+
+autonumber
+
+actor User as Reader
+participant BoardUI as B
+participant "CompatibilityController\n(Flask API)" as CC
+participant "CompatibilityService" as CS
+participant "CompatibilityRepository" as CR
+participant "FriendRepository" as FR
+participant "NotificationRepository" as NR
+database DB
+
+Reader -> B: "작성자와 궁합 요청" 클릭
+B -> CC: POST /compatibility/requests {target_id, message}
+CC -> CC: require_auth() - 토큰 검증
+CC -> CC: get_current_user() - 현재 사용자 확인
+CC -> CS: request_compatibility(requester_id, target_id, message)
+CS -> CS: 본인 확인 (requester_id != target_id)
+CS -> CS: _require_user(requester_id)
+CS -> CS: _require_user(target_id)
+CS -> FR: are_friends(requester_id, target_id)
+FR -> DB: SELECT friendship WHERE (requester_id, addressee_id) AND status='accepted'
+alt 친구 관계 없음
+  DB --> FR: none
+  FR --> CS: False
+  CS --> CC: ValidationError("친구에게만 궁합 요청을 보낼 수 있습니다.")
+  CC --> B: 400 Bad Request
+  B --> Reader: 친구 관계 필요 안내
+else 친구 관계 있음
+  DB --> FR: friendship exists
+  FR --> CS: True
+  CS -> CR: create(requester_id, target_id, message)
+  CR -> DB: INSERT compatibility_request(status='pending', request_message)
+  DB --> CR: request_id
+  CR --> CS: request_id
+  CS -> NR: create(notification_type='compatibility_requested', ...)
+  NR -> DB: INSERT notification
+  DB --> NR: ok
+  NR --> CS: ok
+  CS --> CC: request_id
+  CC --> B: 201 Created {request_id, status: "pending"}
+  B --> Reader: 요청 완료
+end
+
+@enduml
+
